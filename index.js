@@ -23,6 +23,7 @@ const { createIndexes } = require('./src/models/indexes');
 require('dotenv').config();
 
 const path = require('path');
+const translateMiddleware = require('./src/Middleware/translateMiddleware');
 
 
 const app = express();
@@ -52,7 +53,31 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Apply authentication and authorization middleware
+// Language Router
+const langRouter = express.Router();
+app.use('/:lang', translateMiddleware, langRouter);
+
+langRouter.use("/auth", authRoutes);
+langRouter.use("/faqs", faqsRoutes);
+langRouter.use("/forum", forumRoutes);
+langRouter.use("/contacts", contactsRouter);
+langRouter.use("/ticket", ticketRouter);
+langRouter.use("/questions", QuestionRouter);
+langRouter.use("/responses", ResponseRouter);
+langRouter.use("/students", studentRouter);
+langRouter.use("/super-admin", superAdminRouter);
+langRouter.use("/teachers", teacherRouter);
+langRouter.use("/school", schoolRouter);
+langRouter.use("/classes", classRouter);
+langRouter.use("/parent", parentRouter);
+langRouter.use("/pdf", pdfRouter);
+langRouter.use("/incidents", IncidentReportRoutes);
+langRouter.use("/profile", ProfileRoutes);
+
+
+
+// ----------- defult language routes -----------------
+
 app.use("/auth", authRoutes);
 app.use("/faqs", faqsRoutes);
 app.use("/forum", forumRoutes);

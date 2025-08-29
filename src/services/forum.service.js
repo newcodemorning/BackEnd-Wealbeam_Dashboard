@@ -5,8 +5,8 @@ module.exports = {
     const postData = {
       author,
       content,
-      createdAt: new Date(),
       category,
+      createdAt: new Date(),
       upvotes: 0,
       likes: [],
     };

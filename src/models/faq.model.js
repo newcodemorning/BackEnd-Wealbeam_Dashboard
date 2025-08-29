@@ -1,8 +1,14 @@
 const mongoose = require('mongoose');
 
 const faqSchema = new mongoose.Schema({
-  question: { type: String },
-  answer: { type: String },
+  question: {
+    ar: { type: String },
+    en: { type: String },
+  },
+  answer: {
+    ar: { type: String },
+    en: { type: String },
+  },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now },
 });

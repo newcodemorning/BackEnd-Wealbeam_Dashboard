@@ -4,7 +4,6 @@ async function createFq(req, res) {
   try {
     const { question, answer } = req.body;
     const fq = await FqService.createFaq(question, answer);
-
     res.status(201).json({
       message: 'FAQ created successfully',
       data: fq,
@@ -14,9 +13,10 @@ async function createFq(req, res) {
   }
 }
 
+
 async function getAllFqs(req, res) {
   try {
-    const faqs = await FqService.getAllFaqs();
+    const faqs = await FqService.getAllFaqs(req.lang);
     res.status(200).json({
       message: 'FAQs fetched successfully',
       data: faqs,

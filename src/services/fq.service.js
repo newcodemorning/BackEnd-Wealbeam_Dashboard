@@ -14,9 +14,16 @@ class FaqService {
   }
 
   // Get all FAQs
-  async getAllFaqs() {
-    const faqs = await Faq.find().sort({ created_at: -1 }); // Sort by latest created
-    return faqs;
+  async getAllFaqs(lang) {
+    const faqs = await Faq.find().sort({ created_at: -1 }); 
+    const res = faqs.map(fq => ({
+      id: fq._id,
+      question: fq.question?.[lang] ?? fq.question,
+      answer: fq.answer?.[lang] ?? fq.answer,
+      created_at: fq.created_at,
+      updated_at: fq.updated_at
+    }));
+    return res;
   }
 
   // Get an FAQ by ID

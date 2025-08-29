@@ -1,8 +1,14 @@
 const Joi = require('joi');
 
 const faqSchema = Joi.object({
-    question: Joi.string().required(),
-    answer: Joi.string().required(),
+    question: Joi.object({
+        ar: Joi.string().required(),
+        en: Joi.string().required()
+    }),
+    answer: Joi.object({
+        ar: Joi.string().required(),
+        en: Joi.string().required()
+    }),
     created_at: Joi.date().iso(),
     updated_at: Joi.date().iso()
 });
