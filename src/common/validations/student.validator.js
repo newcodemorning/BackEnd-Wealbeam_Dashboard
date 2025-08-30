@@ -1,15 +1,27 @@
 const Joi = require('joi');
 
 const studentSchema = Joi.object({
-    first_name: Joi.string().required().messages({
-        'string.empty': 'First name is required',
+    first_name: Joi.object({
+        ar: Joi.string().optional().messages({
+            'string.empty': 'Arabic first name cannot be empty'
+        }),
+        en: Joi.string().required().messages({
+            'string.empty': 'English first name is required',
+            'any.required': 'English first name is required'
+        })
+    }).required().messages({
         'any.required': 'First name is required'
     }),
-    last_name: Joi.string().optional().messages({
-        'string.empty': 'Last name cannot be empty'
-    }),
+    last_name: Joi.object({
+        ar: Joi.string().optional().messages({
+            'string.empty': 'Arabic last name cannot be empty'
+        }),
+        en: Joi.string().optional().messages({
+            'string.empty': 'English last name cannot be empty'
+        })
+    }).optional(),
     first_email: Joi.string().email().allow('').optional().messages({
-        'string.email': 'Second email must be a valid email address'
+        'string.email': 'First email must be a valid email address'
     }),
     second_email: Joi.string().email().allow('').optional().messages({
         'string.email': 'Second email must be a valid email address'
@@ -50,11 +62,21 @@ const studentSchema = Joi.object({
 });
 
 const updateStudentSchema = Joi.object({
-    first_name: Joi.string().optional().messages({
-        'string.empty': 'First name cannot be empty'
+    first_name: Joi.object({
+        ar: Joi.string().optional().messages({
+            'string.empty': 'Arabic first name cannot be empty'
+        }),
+        en: Joi.string().optional().messages({
+            'string.empty': 'English first name cannot be empty'
+        })
     }),
-    last_name: Joi.string().optional().messages({
-        'string.empty': 'Last name cannot be empty'
+    last_name: Joi.object({
+        ar: Joi.string().optional().messages({
+            'string.empty': 'Arabic last name cannot be empty'
+        }),
+        en: Joi.string().optional().messages({
+            'string.empty': 'English last name cannot be empty'
+        })
     }),
     second_email: Joi.string().email().allow('').optional().messages({
         'string.email': 'Second email must be a valid email address'
@@ -77,7 +99,7 @@ const updateStudentSchema = Joi.object({
         'string.empty': 'Gender cannot be empty',
         'any.only': 'Gender must be either Male or Female'
     }),
-    grade: Joi.string().required().messages({
+    grade: Joi.string().messages({
         'string.empty': 'Grade is required',
         'any.required': 'Grade is required'
     }),

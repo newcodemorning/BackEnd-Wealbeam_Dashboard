@@ -1,7 +1,7 @@
 const Student = require('../models/student.model');
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcrypt');
-const { bucket } = require('../config/firebase'); // If you're uploading files to Firebase Storage
+const { bucket } = require('../config/firebase');
 const User = require('../models/user.model');
 const Class = require('../models/class.model');
 const Parent = require('../models/parent.model');
@@ -9,11 +9,12 @@ const path = require('path');
 const { parse } = require('csv-parse');
 const School = require('../models/school.model');
 const Teacher = require('../models/teacher.model');
+const i18n = require('../config/i18n');
 
 // Add a new student
 const addStudent = async (studentData, file) => {
   const { first_email, first_phone, class_id, parent_id, photo, ...rest } = studentData;
-  
+
   console.log('Adding student with data:', {
     email: first_email,
     class_id,
@@ -22,25 +23,25 @@ const addStudent = async (studentData, file) => {
 
   // Validate required fields
   if (!first_email || !class_id) {
-    throw new Error('Email and class ID are required.');
+    throw new Error(i18n.__('validation.required'));
   }
 
   // Check existing user
   const existingUser = await User.findOne({ email: first_email });
   if (existingUser) {
-    throw new Error('Email already registered.');
+    throw new Error(i18n.__('auth.email_already_registered'));
   }
 
-  // Find class  ID and get its school
+  // Find class ID and get its school
   const classObj = await Class.findById(class_id)
     .populate('school', '_id');
-  
+
   if (!classObj) {
-    throw new Error(`Class with ID "${class_id}" not found`);
+    throw new Error(i18n.__('student.class_not_found', { class_id }));
   }
 
   if (!classObj.school) {
-    throw new Error(`Class with ID "${class_id}" is not associated with any school`);
+    throw new Error(i18n.__('student.class_no_school', { class_id }));
   }
 
   console.log('Found class:', {
@@ -172,25 +173,42 @@ const getStudents = async (req) => {
     query._id = student._id;
   }
 
+  const { page, limit, skip } = req.pagination;
+  const total = await Student.countDocuments(query);
+
   const students = await Student.find(query)
     .populate('user', 'email')
-    .populate('class')
-    .populate('parent');
+    .populate('class', '-students  -createdAt -updatedAt -__v')
+    .populate('parent', '-students -createdAt -updatedAt -__v -user')
+    .skip(skip)
+    .limit(limit);
 
-  return students.map(student => {
+  let lang = req.lang || 'en';
+  const cleanedStudents = students.map((student) => {
     const studentData = student.toObject();
     studentData.first_email = student.user?.email || '';
+    studentData.first_name = student.first_name[lang];
+    studentData.last_name = student.last_name[lang];
     delete studentData.user;
     return studentData;
   });
+
+  return {
+    page,
+    totalPages: Math.ceil(total / limit),
+    totalItems: total,
+    data: cleanedStudents
+  };
+
+
 };
 
 // Get a single student by ID 
 const getStudentById = async (id) => {
   const student = await Student.findById(id)
-    .populate('user', 'email') // Populate  the 'email' from User
-    .populate('class')
-    .populate('parent')
+    .populate('user', 'email')
+    .populate('class', '-students  -createdAt -updatedAt -__v')
+    .populate('parent', '-students -createdAt -updatedAt -__v -user');
 
   if (!student) return null;
 
@@ -316,14 +334,14 @@ const createStudentForImporting = async (studentData) => {
   const existingUser = await User.findOne({ email: first_email });
   if (existingUser) {
     console.log('[Import] User already exists with email:', first_email);
-    throw new Error('Email already registered.');
+    throw new Error(i18n.__('auth.email_already_registered'));
   }
   console.log('[Import] No existing user found, proceeding...');
 
   // Find class by name and get its school
   console.log('[Import] Looking for class:', class_name);
   const trimmedClassName = class_name.trim().replace(/\s+/g, ' '); // Trim and normalize spaces
-  const classObj = await Class.findOne({ 
+  const classObj = await Class.findOne({
     $expr: {
       $eq: [
         { $trim: { input: "$ClassName" } }, // Trim spaces from stored class name
@@ -331,7 +349,7 @@ const createStudentForImporting = async (studentData) => {
       ]
     }
   }).populate('school', '_id');
-  
+
   if (!classObj) {
     console.log('[Import] Class not found:', trimmedClassName);
     throw new Error(`Class "${trimmedClassName}" not found`);
@@ -472,19 +490,43 @@ const getStudentsByClassId = async (classId, req) => {
     }
   }
 
+  // Get total count of students for pagination
+  const { page, limit, skip } = req.pagination;
+  
+  const total = await Student.countDocuments({ class: classId });
+  const totalPages = Math.ceil(total / limit);
+  const currentPage = page;
+
+
   // Get students for the class
   const students = await Student.find({ class: classId })
     .populate('user', 'email')
-    .populate('class')
-    .populate('parent');
-
-  return students.map(student => {
+    .populate('class', '-students  -createdAt -updatedAt -__v')
+    .populate('parent', '-students  -createdAt -updatedAt -__v')
+    .skip(skip)
+    .limit(limit);
+  
+  let lang = req.lang || 'en';
+  console.log('[Import] Processing students for language:', lang);
+  const cleanedStudents = students.map((student) => {
     const studentData = student.toObject();
     studentData.first_email = student.user?.email || '';
+    studentData.first_name = student.first_name[lang] || student.first_name;
+    studentData.last_name = student.last_name[lang] || student.last_name;
     delete studentData.user;
     return studentData;
   });
+
+  const paginatedStudents = {
+    total,
+    totalPages,
+    currentPage,
+    students: cleanedStudents
+  };
+
+  return paginatedStudents;
 };
+
 
 const importStudentsFromCSV = (fileBuffer) => {
   console.log('[Service] Starting CSV import process...');
@@ -516,18 +558,18 @@ const importStudentsFromCSV = (fileBuffer) => {
       }
     }),
 
-    worker.on('error', (error) => {
-      console.error('[Service] Worker error:', error);
-      reject(error);
-    }),
+      worker.on('error', (error) => {
+        console.error('[Service] Worker error:', error);
+        reject(error);
+      }),
 
-    worker.on('exit', (code) => {
-      console.log('[Service] Worker exited with code:', code);
-      if (code !== 0) {
-        reject(new Error(`Worker stopped with exit code ${code}`));
-      }
-    })
-    
+      worker.on('exit', (code) => {
+        console.log('[Service] Worker exited with code:', code);
+        if (code !== 0) {
+          reject(new Error(`Worker stopped with exit code ${code}`));
+        }
+      })
+
   });
 };
 

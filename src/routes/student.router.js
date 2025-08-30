@@ -6,6 +6,7 @@ const { authenticateUser, authorizeRole } = require('../common/middleware/auth')
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const pagination = require('../Middleware/pagination');
 
 const router = express.Router();
 
@@ -49,7 +50,7 @@ const photoUpload = multer({
 });
 
 // Get all students (school can see their students, teacher can see their students)
-router.get('/', authorizeRole(['super-admin', 'school', 'teacher']), studentController.getStudents);
+router.get('/', authorizeRole(['super-admin', 'school', 'teacher']), pagination, studentController.getStudents);
 
 // Export students (school can export their students, teacher can export their students)
 router.get('/export', authorizeRole(['super-admin', 'school', 'teacher']), studentController.exportStudents);
@@ -58,7 +59,7 @@ router.get('/export', authorizeRole(['super-admin', 'school', 'teacher']), stude
 router.get('/:id', authorizeRole(['super-admin', 'school', 'teacher', 'parent', 'student']), studentController.getStudentById);
 
 // Get students by class ID (school can see their students, teacher can see their students)
-router.get('/class/:classId', authorizeRole(['super-admin', 'school', 'teacher']), studentController.getStudentsByClass);
+router.get('/class/:classId', authorizeRole(['super-admin', 'school', 'teacher']), pagination, studentController.getStudentsByClass);
 
 // Add a new student (school can add students, teacher can add students)
 router.post('/', 
@@ -71,7 +72,6 @@ router.post('/',
 router.put('/:id', 
     authorizeRole(['super-admin', 'school', 'teacher', 'student']),
     photoUpload.single('photo'),
-    validate(updateStudentSchema),
     studentController.updateStudent
 );
 

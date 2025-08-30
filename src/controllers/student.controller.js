@@ -36,6 +36,10 @@ const getStudentById = async (req, res) => {
     if (!student) {
       return res.status(404).json({ message: 'Student not found' });
     }
+    let lang = req.lang || 'en';
+    student.first_name = student.first_name[lang];
+    student.last_name = student.last_name[lang];
+
     res.status(200).json(student);
   } catch (error) {
     res.status(500).json({ message: error.message });

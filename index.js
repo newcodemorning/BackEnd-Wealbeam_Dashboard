@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require("mongoose");
 const bodyParser = require('body-parser');
+const i18n = require('./src/config/i18n');
 const authRoutes = require('./src/routes/auth.router');
 const faqsRoutes = require('./src/routes/faq.router');
 const forumRoutes = require('./src/routes/forum.router');
@@ -28,19 +29,21 @@ const translateMiddleware = require('./src/Middleware/translateMiddleware');
 
 const app = express();
 
+// Initialize i18n
+app.use(i18n.init);
+
 app.use(cors());
 mongoose
   .connect(process.env.MONGO_DATABASE_URL, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 30000, // 30 seconds
-  socketTimeoutMS: 45000, // 45 seconds
-  maxPoolSize: 10
+    serverSelectionTimeoutMS: 30000, // 30 seconds
+    socketTimeoutMS: 45000, // 45 seconds
+    maxPoolSize: 10
 
   })
   .then(async () => {
     console.log("DB Connected");
-    // Create indexes after successful connection
     await createIndexes();
   })
   .catch((err) => {

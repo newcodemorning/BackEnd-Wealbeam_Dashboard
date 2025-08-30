@@ -1,0 +1,56 @@
+{
+    "common": {
+        "success": "نجح",
+        "error": "خطأ",
+        "loading": "جاري التحميل...",
+        "save": "حفظ",
+        "cancel": "إلغاء",
+        "delete": "حذف",
+        "edit": "تعديل",
+        "add": "إضافة",
+        "search": "بحث",
+        "close": "إغلاق"
+    },
+    "auth": {
+        "login": "تسجيل الدخول",
+        "logout": "تسجيل الخروج",
+        "register": "التسجيل",
+        "email": "البريد الإلكتروني",
+        "password": "كلمة المرور",
+        "forgot_password": "نسيت كلمة المرور",
+        "login_success": "تم تسجيل الدخول بنجاح",
+        "login_failed": "فشل تسجيل الدخول",
+        "invalid_credentials": "بيانات اعتماد غير صحيحة",
+        "email_already_registered": "البريد الإلكتروني مسجل بالفعل"
+    },
+    "student": {
+        "first_name": "الاسم الأول",
+        "last_name": "اسم العائلة",
+        "email": "البريد الإلكتروني",
+        "phone": "الهاتف",
+        "date_of_birth": "تاريخ الميلاد",
+        "gender": "الجنس",
+        "class": "الصف",
+        "grade": "الدرجة",
+        "student_added": "تم إضافة الطالب بنجاح",
+        "student_updated": "تم تحديث الطالب بنجاح",
+        "student_deleted": "تم حذف الطالب بنجاح",
+        "student_not_found": "الطالب غير موجود",
+        "class_not_found": "الصف بالمعرف \"{{class_id}}\" غير موجود",
+        "class_no_school": "الصف بالمعرف \"{{class_id}}\" غير مرتبط بأي مدرسة"
+    },
+    "faq": {
+        "question": "السؤال",
+        "answer": "الجواب",
+        "faq_created": "تم إنشاء الأسئلة الشائعة بنجاح",
+        "faq_updated": "تم تحديث الأسئلة الشائعة بنجاح",
+        "faq_deleted": "تم حذف الأسئلة الشائعة بنجاح",
+        "faq_not_found": "الأسئلة الشائعة غير موجودة"
+    },
+    "validation": {
+        "required": "البريد الإلكتروني ومعرف الصف مطلوبان",
+        "email_invalid": "يرجى إدخال بريد إلكتروني صحيح",
+        "phone_invalid": "يرجى إدخال رقم هاتف صحيح",
+        "password_min": "يجب أن تكون كلمة المرور 6 أحرف على الأقل"
+    }
+}
