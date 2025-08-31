@@ -77,8 +77,6 @@ langRouter.use("/pdf", pdfRouter);
 langRouter.use("/incidents", IncidentReportRoutes);
 langRouter.use("/profile", ProfileRoutes);
 
-
-
 // ----------- defult language routes -----------------
 
 app.use("/auth", authRoutes);

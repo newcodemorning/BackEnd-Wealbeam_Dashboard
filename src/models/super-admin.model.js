@@ -2,8 +2,14 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
 const superAdminSchema = new mongoose.Schema({
-  firstName: { type: String, required: true },
-  lastName: { type: String, required: true },
+  firstName: {
+    ar: { type: String, required: true },
+    en: { type: String, required: true }
+  },
+  lastName: {
+    ar: { type: String, required: true },
+    en: { type: String, required: true }
+  },
   address: { type: String },
   photo: { type: String, default: "" },
   phoneNumber: { type: String, required: true },

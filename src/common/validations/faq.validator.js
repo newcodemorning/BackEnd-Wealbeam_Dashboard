@@ -4,12 +4,12 @@ const faqSchema = Joi.object({
     question: Joi.object({
         ar: Joi.string().required(),
         en: Joi.string().required(),
-        fr: Joi.string().required() // Add new language validation
+        fr: Joi.string().required()  
     }),
     answer: Joi.object({
         ar: Joi.string().required(),
         en: Joi.string().required(),
-        fr: Joi.string().required() // Add new language validation
+        fr: Joi.string().required()  
     }),
     created_at: Joi.date().iso(),
     updated_at: Joi.date().iso()

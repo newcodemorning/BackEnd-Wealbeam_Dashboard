@@ -6,7 +6,8 @@ const { createStudentForImporting } = require('../services/student.service');
 // MongoDB connection setup for worker
 const connectDB = async () => {
   try {
-    await mongoose.connect('mongodb+srv://admin:7JEphJ21g3cv3Ugi@cluster0.e3tdn.mongodb.net/renda-app?retryWrites=true&w=majority', {
+    // await mongoose.connect('mongodb+srv://admin:7JEphJ21g3cv3Ugi@cluster0.e3tdn.mongodb.net/renda-app?retryWrites=true&w=majority', {
+    await mongoose.connect(process.env.MONGO_DATABASE_URL, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
@@ -24,25 +25,20 @@ parentPort.on('message', async (fileBuffer) => {
   let processedCount = 0;
 
   try {
-    // Connect to MongoDB first
     await connectDB();
     console.log('[Worker] Starting CSV import process...');
 
-    // Try to detect and handle different encodings
+    
     let csvString;
     try {
-      // First try UTF-8
       csvString = fileBuffer.toString('utf8');
-      // Check if the string contains ASCII codes (numbers separated by commas)
       if (/^\d+(,\d+)*$/.test(csvString.trim())) {
         console.log('[Worker] Detected ASCII codes, converting to string...');
-        // Convert ASCII codes to actual string
         csvString = csvString.split(',')
           .map(code => String.fromCharCode(parseInt(code)))
           .join('');
       }
     } catch (e) {
-      // If UTF-8 fails, try other encodings
       console.log('[Worker] UTF-8 failed, trying other encodings...');
       csvString = fileBuffer.toString('latin1');
     }
