@@ -60,7 +60,7 @@ async function importStudentsFromCSV(filePath) {
                         gender: row.gender,
                         grade: row.grade,
                         photo: row.photo || "",
-                        school: classObj.school._id // Get school ID from class relationship
+                        school: classObj.school._id 
                     };
 
                     // 3. Use service function
@@ -68,7 +68,7 @@ async function importStudentsFromCSV(filePath) {
                     results.push(student);
                     callback();
                 } catch (error) {
-                    console.error(`Error on row:`, row);
+                    console.error(`Error on row : `, row);
                     console.error('Error details:', error);
                     errors.push({ row, error: error.message });
                     callback();

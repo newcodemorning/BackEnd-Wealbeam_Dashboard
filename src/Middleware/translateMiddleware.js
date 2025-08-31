@@ -1,6 +1,6 @@
 const i18n = require('../config/i18n');
 
-const SUPPORTED_LANGUAGES = ['en', 'ar'];
+const SUPPORTED_LANGUAGES = ['en', 'ar', 'fr']; // Add new language here
 const DEFAULT_LANGUAGE = 'en';
 
 const translateMiddleware = (req, res, next) => {

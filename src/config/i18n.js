@@ -3,7 +3,7 @@ const path = require('path');
 
 // Configure i18n
 i18n.configure({
-    locales: ['en', 'ar'],
+    locales: ['en', 'ar', 'fr'], // Add new language here
     directory: path.join(__dirname, '../locales'),
     defaultLocale: 'en',
     objectNotation: true,
