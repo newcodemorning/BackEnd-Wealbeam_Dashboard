@@ -25,12 +25,12 @@ async function importStudentsFromCSV(filePath) {
             transform: async (row, encoding, callback) => {
                 try {
                     // 1. Find related entities
-                    const trimmedClassName = row.class_name.trim().replace(/\s+/g, ' '); // Trim and normalize spaces
+                    const trimmedClassName = row.class_name.trim().replace(/\s+/g, ' '); 
                     const [classObj, parent] = await Promise.all([
                         Class.findOne({ 
                             $expr: {
                                 $eq: [
-                                    { $trim: { input: "$ClassName" } }, // Trim spaces from stored class name
+                                    { $trim: { input: "$ClassName" } },  
                                     trimmedClassName
                                 ]
                             }

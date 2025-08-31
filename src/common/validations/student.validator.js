@@ -103,9 +103,9 @@ const updateStudentSchema = Joi.object({
         'string.empty': 'Grade is required',
         'any.required': 'Grade is required'
     }),
-    class: Joi.forbidden(), // Typically managed through separate endpoints
-    parent: Joi.forbidden() // Typically managed through separate endpoints
-}).min(1); // At least one field must be provided for update
+    class: Joi.forbidden(), 
+    parent: Joi.forbidden() 
+}).min(1);
 
 module.exports = {
     studentSchema,
