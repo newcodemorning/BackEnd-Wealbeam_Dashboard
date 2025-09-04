@@ -52,8 +52,14 @@ const createClass = async (classData) => {
 
 
 const getAllClasses = async (req) => {
+
+
   let query = {};
-  
+  const { page, limit, skip } = req.pagination;
+
+ 
+  let lang = req.lang || 'en';
+
   // If user is a school, only get classes from their school
   if (req.user.role === 'school') {
     const school = await School.findOne({ user: req.user.id });
@@ -72,17 +78,45 @@ const getAllClasses = async (req) => {
     query.teacher = teacher._id;
   }
 
-  return await Class.find(query)
-    .populate('school')
-    .populate('teacher')
-    .populate('students');
+  const total = await Class.countDocuments(query);
+  const totalPages = Math.ceil(total / limit);
+  const currentPage = page;
+
+  const classDocs = await Class.find(query)
+    .populate('school','-teachers -classes')
+    .populate('teacher','-classes')
+    .populate('students')
+    .skip(skip)
+    .limit(limit)
+    .lean();
+  
+  classDocs.forEach(classDoc => {
+    classDoc.ClassName = classDoc.ClassName[lang] || classDoc.ClassName;
+    classDoc.school.schoolName = classDoc.school.schoolName[lang] || classDoc.school.schoolName;
+    classDoc.school.address = classDoc.school.address[lang] || classDoc.school.address;
+    classDoc.teacher.first_name = classDoc.teacher.first_name[lang] || classDoc.teacher.first_name;
+    classDoc.teacher.last_name = classDoc.teacher.last_name[lang] || classDoc.teacher.last_name;
+  });
+
+  return {
+    totalItems: total,
+    totalPages: totalPages,
+    currentPage: currentPage,
+    classes: classDocs
+  };
+
+
 };
+
+
+
 
 const getClassById = async (id, req) => {
   const classDoc = await Class.findById(id)
     .populate('school')
     .populate('teacher')
-    .populate('students');
+    .populate('students')
+    .lean();
 
   if (!classDoc) {
     throw new Error('Class not found');
@@ -100,6 +134,12 @@ const getClassById = async (id, req) => {
       throw new Error('Access denied to this class');
     }
   }
+  let lang = req.lang || 'en';
+  classDoc.ClassName = classDoc.ClassName[lang] || classDoc.ClassName;
+  classDoc.school.schoolName = classDoc.school.schoolName[lang] || classDoc.school.schoolName;
+  classDoc.school.address = classDoc.school.address[lang] || classDoc.school.address;
+  classDoc.teacher.first_name = classDoc.teacher.first_name[lang] || classDoc.teacher.first_name;
+  classDoc.teacher.last_name = classDoc.teacher.last_name[lang] || classDoc.teacher.last_name;
 
   return classDoc;
 };
@@ -168,8 +208,21 @@ const updateClass = async (id, updatedData) => {
     }
   }
 
-  // Update class data
-  const updatedClass = await Class.findByIdAndUpdate(id, otherUpdates, { 
+
+  const newData = { ...otherUpdates };
+
+  if (otherUpdates["ClassName.en"] || otherUpdates["ClassName.ar"]) {
+    newData.ClassName = {
+      en: otherUpdates["ClassName.en"] || originalClass.ClassName.en,
+      ar: otherUpdates["ClassName.ar"] || originalClass.ClassName.ar,
+    };
+    delete newData["ClassName.en"];
+    delete newData["ClassName.ar"];
+  }
+
+ 
+
+  const updatedClass = await Class.findByIdAndUpdate(id, newData, { 
     new: true 
   })
   .populate('school')
@@ -253,8 +306,16 @@ const deleteClass = async (id) => {
   }
 };
 
-const getClassesBySchoolId = async (schoolId) => {
-  // Validate school existence
+const getClassesBySchoolId = async (schoolId, req) => {
+
+  const { page, limit, skip } = req.pagination;
+
+  const total = await Student.countDocuments({ school: schoolId });
+  const totalPages = Math.ceil(total / limit);
+  const currentPage = page;
+  let lang = req.lang || 'en';
+
+
   const schoolExists = await School.findById(schoolId);
   if (!schoolExists) {
     throw new Error("School not found");
@@ -262,9 +323,19 @@ const getClassesBySchoolId = async (schoolId) => {
 
   // Get classes for the school
   const classes = await Class.find({ school: schoolId })
-    .populate('teacher', '-password') // Populate teacher details
+    .populate('teacher', '-password -classes') // Populate teacher details
     .populate('students') // Populate student details
-    .populate('school', '-password'); // Populate school details
+    .populate('school', '-password -students -teachers -classes')
+    .skip(skip)
+    .limit(limit)
+    .lean();
+  classes.forEach(classDoc => {
+    classDoc.ClassName = classDoc.ClassName[lang] || classDoc.ClassName;
+    classDoc.school.schoolName = classDoc.school.schoolName[lang] || classDoc.school.schoolName;
+    classDoc.school.address = classDoc.school.address[lang] || classDoc.school.address;
+    classDoc.teacher.first_name = classDoc.teacher.first_name[lang] || classDoc.teacher.first_name;
+    classDoc.teacher.last_name = classDoc.teacher.last_name[lang] || classDoc.teacher.last_name;
+  });
 
   return classes;
 };

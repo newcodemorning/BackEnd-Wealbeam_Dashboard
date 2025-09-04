@@ -16,9 +16,12 @@ const getClasses = async (req, res) => {
 
 // Get classes by school ID
 const getClassesBySchool = async (req, res) => {
+
+
+
   try {
     const { schoolId } = req.params;
-    const classes = await classService.getClassesBySchoolId(schoolId);
+    const classes = await classService.getClassesBySchoolId(schoolId, req);
     res.status(200).json(classes);
   } catch (error) {
     if (error.message === "School not found") {
