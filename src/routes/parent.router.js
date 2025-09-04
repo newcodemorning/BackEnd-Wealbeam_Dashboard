@@ -11,6 +11,8 @@ const upload = multer({ storage: multer.memoryStorage() });
 // Apply authentication to all routes
 router.use(authenticateUser);
 
+router.post('/register', upload.single('photo'), parentController.addParent);
+
 // Add a parent (school can add parents, teacher can add parents)
 router.post('/', authorizeRole(['super-admin', 'school', 'teacher']), upload.single('photo'), parentController.addParent);
 

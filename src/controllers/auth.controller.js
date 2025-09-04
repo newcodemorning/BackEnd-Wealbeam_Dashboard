@@ -40,6 +40,8 @@ class AuthController {
     }
   }
 
+
+
   async changePassword(req, res) {
     try {
       const { currentPassword, newPassword } = req.body;

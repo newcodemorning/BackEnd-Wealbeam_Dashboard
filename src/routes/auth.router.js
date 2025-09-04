@@ -9,6 +9,7 @@ const router = express.Router();
 
 
 router.post('/login', authController.login);
+router.post('/login/parent', authController.login);
 // Change password route
 router.post('/change-password', authenticateUser, authController.changePassword);
 
