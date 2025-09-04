@@ -43,11 +43,16 @@ const getTeachers = async (req, res) => {
 
 // Get a single teacher by ID
 const getTeacherById = async (req, res) => {
+  const lang = req.lang || 'en';
   try {
     const teacher = await teacherService.getTeacherById(req.params.id);
     if (!teacher) {
       return res.status(404).json({ message: 'Teacher not found' });
     }
+
+    teacher.first_name = teacher.first_name[lang];
+    teacher.last_name = teacher.last_name[lang];
+
     res.status(200).json(teacher);
   } catch (error) {
     res.status(500).json({ message: error.message });

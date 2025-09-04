@@ -1,8 +1,14 @@
 const mongoose = require('mongoose');
 
 const schoolSchema = new mongoose.Schema({
-    schoolName: { type: String, required: true },
-    address: { type: String, required: true },
+    schoolName: {
+        ar: { type: String, required: true },
+        en: { type: String, required: true }
+    },
+    address: {
+        ar: { type: String, required: true },
+        en: { type: String, required: true }
+    },
     phone: { type: String, required: true },
     subscriptionEndDate: { type: Date, required: true },
     language: { type: String },

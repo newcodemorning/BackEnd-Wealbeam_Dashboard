@@ -16,11 +16,24 @@ const teacherSchema = Joi.object({
             'string.empty': 'Password is required',
             'any.required': 'Password is required'
         }),
-    first_name: Joi.string().required().messages({
-        'string.empty': 'First name is required',
-        'any.required': 'First name is required'
+    first_name: Joi.object({
+        ar: Joi.string().required().messages({
+            'string.empty': 'First name (AR) is required',
+            'any.required': 'First name (AR) is required'
+        }),
+        en: Joi.string().required().messages({
+            'string.empty': 'First name (EN) is required',
+            'any.required': 'First name (EN) is required'
+        })
     }),
-    last_name: Joi.string().allow('', null),
+    last_name: Joi.object({
+        ar: Joi.string().messages({
+
+        }),
+        en: Joi.string().messages({
+        })
+    }),
+
     photo: Joi.string().uri().allow('').optional().messages({
         'string.uri': 'Photo must be a valid URL'
     }),
@@ -69,12 +82,22 @@ const updateTeacherSchema = Joi.object({
             'string.empty': 'Password is required',
             'any.required': 'Password is required'
         }),
-    first_name: Joi.string().optional().messages({
-        'string.empty': 'First name cannot be empty'
-    }),
-    last_name: Joi.string().optional().messages({
-        'string.empty': 'Last name cannot be empty'
-    }),
+    first_name: Joi.object({
+        ar: Joi.string().optional().messages({
+            'string.empty': 'First name (AR) cannot be empty'
+        }),
+        en: Joi.string().optional().messages({
+            'string.empty': 'First name (EN) cannot be empty'
+        })
+    }).optional(),
+    last_name: Joi.object({
+        ar: Joi.string().optional().messages({
+            'string.empty': 'Last name (AR) cannot be empty'
+        }),
+        en: Joi.string().optional().messages({
+            'string.empty': 'Last name (EN) cannot be empty'
+        })
+    }).optional(),
     photo: Joi.string().uri().allow('').optional().messages({
         'string.uri': 'Photo must be a valid URL'
     }),

@@ -13,10 +13,10 @@ const formParser = multer().none();
 router.use(authenticateUser, authorizeRole(["super-admin"]))
 
 // CRUD Routes
-router.post('/', formParser, validate(schoolSchema), schoolController.createSchool);
+router.post('/', formParser, schoolController.createSchool);
 router.get('/', schoolController.getAllSchools);
 router.get('/:id', schoolController.getSchoolById);
-router.put('/:id', formParser, validate(updateSchoolSchema), schoolController.updateSchool);
+router.put('/:id', formParser, schoolController.updateSchool);
 router.delete('/:id', schoolController.deleteSchool);
 
 module.exports = router;

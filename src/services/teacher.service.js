@@ -67,6 +67,7 @@ const addTeacher = async (data, file) => {
 const getTeachers = async (req) => {
   let query = {};
   
+  const lang = req.lang || 'en';
   // If user is a school, only get teachers from their school
   if (req.user.role === 'school') {
     const school = await School.findOne({ user: req.user.id });
@@ -85,21 +86,46 @@ const getTeachers = async (req) => {
     query.school = teacher.school;
   }
 
-  const teachers = await Teacher.find(query)
-    .populate('user', 'email') // Populate user email
-    .populate('school') // Populate school details
-    .populate('classes'); // Populate class details
 
-  return teachers.map(teacher => ({
+
+  const { page, limit, skip } = req.pagination;
+
+  const total = await Teacher.countDocuments(query);
+  const totalPages = Math.ceil(total / limit);
+  const currentPage = page;
+
+
+
+  const teachers = await Teacher.find(query)
+    .populate('user', 'email') 
+    .populate('school','-teachers -classes -__v') 
+    .populate('classes', '-teachers -students -__v')
+    .skip(skip)
+    .limit(limit);
+
+
+  const cleanedTeachers = teachers.map(teacher => ({
     email: teacher.user?.email,
-    ...teacher._doc
+    ...teacher._doc,
+    first_name: teacher.first_name[lang],
+    last_name: teacher.last_name[lang]
   }));
+
+  const paginatedData = {
+    total,
+    totalPages,
+    currentPage,
+    teachers: cleanedTeachers
+  };
+
+  return paginatedData;
+
 };
 
 const getTeacherById = async (id) => {
   const teacher = await Teacher.findById(id)
     .populate('user', 'email') // Populate user email
-    .populate('school') // Populate school name
+    .populate('school','-teachers -classes') // Populate school name
     .populate('classes'); // Populate class details
 
   if (!teacher) return null;
@@ -114,18 +140,15 @@ const getTeacherById = async (id) => {
 const updateTeacher = async (id, updateData) => {
   const { email, password, ...otherUpdates } = updateData;
 
-  // Get original teacher data
   const originalTeacher = await Teacher.findById(id).populate('user');
   if (!originalTeacher) {
     throw new Error('Teacher not found');
   }
 
-  // Update user email and password if provided
   if (email || password) {
     const userUpdates = {};
     
     if (email) {
-      // Check if email is already taken by another user
       const existingUser = await User.findOne({ 
         email: email, 
         _id: { $ne: originalTeacher.user._id } 

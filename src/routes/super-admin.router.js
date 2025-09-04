@@ -13,7 +13,7 @@ router.use(authenticateUser, authorizeRole(["super-admin"]));
 // CRUD Routes
 router.post('/', upload.none('photo'), superAdminController.createSuperAdmin); // Create Super Admin
 router.get('/:id', superAdminController.getSuperAdmin); // Get a Super Admin by ID
-router.put('/:id', upload.single('photo'), validate(updateSuperAdminSchema), superAdminController.updateSuperAdmin); // Update Super Admin personal information
+router.put('/:id', upload.single('photo'),  superAdminController.updateSuperAdmin); // Update Super Admin personal information
 router.patch('/:id/change-password', superAdminController.changePassword); // Change Super Admin password
 
 module.exports = router;

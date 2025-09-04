@@ -50,7 +50,7 @@ const createSchool = async (schoolData) => {
 const getAllSchools = async () => {
   const schools = await School.find()
     .populate('user', 'email')
-    .populate('teachers') // Populate all teacher fields
+    .populate('teachers','-classes') // Populate all teacher fields
     .populate('classes'); // Populate all class fields
 
   return schools.map(school => ({

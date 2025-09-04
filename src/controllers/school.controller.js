@@ -11,8 +11,13 @@ const createSchool =async (req, res) => {
   
 
 const getAllSchools = async (req, res) => {
+    const lang = req.lang || 'en';
     try {
         const schools = await schoolService.getAllSchools();
+        schools.forEach(school => {
+            school.schoolName = school.schoolName[lang];
+            school.address = school.address[lang];
+        });
         res.status(200).json(schools);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -20,9 +25,12 @@ const getAllSchools = async (req, res) => {
 };
 
 const getSchoolById = async (req, res) => {
+    const lang = req.lang || 'en';
     try {
         const school = await schoolService.getSchoolById(req.params.id);
         if (school) {
+            school.schoolName = school.schoolName[lang];
+            school.address = school.address[lang];
             res.status(200).json(school);
         } else {
             res.status(404).json({ message: 'School not found' });

@@ -5,6 +5,7 @@ const { teacherSchema, updateTeacherSchema } = require('../common/validations/te
 const { authenticateUser, authorizeRole } = require('../common/middleware/auth');
 
 const multer = require('multer');
+const pagination = require('../Middleware/pagination');
 
 const router = express.Router();
 const storage = multer.memoryStorage();
@@ -19,10 +20,10 @@ const upload = multer({
 router.use(authenticateUser);
 
 // Add a new teacher (only school can add teachers to their school)
-router.post('/', authorizeRole(['super-admin', 'school']), upload.single('photo'), validate(teacherSchema), teacherController.addTeacher);
+router.post('/', authorizeRole(['super-admin', 'school']), upload.single('photo'), teacherController.addTeacher);
 
 // Get all teachers (school can see their teachers, super-admin can see all)
-router.get('/', authorizeRole(['super-admin', 'school']), teacherController.getTeachers);
+router.get('/', authorizeRole(['super-admin', 'school']), pagination, teacherController.getTeachers);
 
 // Get teachers by school ID (school can see their teachers, super-admin can see all)
 router.get('/school/:schoolId', authorizeRole(['super-admin', 'school']), teacherController.getTeachersBySchool);

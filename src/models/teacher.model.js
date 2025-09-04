@@ -1,8 +1,14 @@
 const mongoose = require('mongoose');
 
 const teacherSchema = new mongoose.Schema({
-    first_name: { type: String, required: true },
-    last_name: { type: String, default: ''},
+    first_name: {
+        ar: { type: String, required: true },
+        en: { type: String, required: true }
+    },
+    last_name: {
+        ar: { type: String, required: true },
+        en: { type: String, required: true }
+    },
     photo: { type: String, default: '' },
     age: { type: Number, default: 0 },
     title: { 
