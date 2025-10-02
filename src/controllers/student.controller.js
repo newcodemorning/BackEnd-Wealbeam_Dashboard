@@ -47,6 +47,7 @@ const getStudentById = async (req, res) => {
 };
 
 // Update a student by ID
+
 const updateStudent = async (req, res) => {
   try {
     const student = await studentService.updateStudent(req.params.id, req.body);
