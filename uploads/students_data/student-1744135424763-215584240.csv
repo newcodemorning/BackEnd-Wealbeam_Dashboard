@@ -1,6 +1,0 @@
-first_email,first_name,last_name,second_email,first_phone,second_phone,date_of_birth,gender,grade,class_name,parent_phone,photo
-john.doe@school.com,John,Doe,john.doe2@example.com,15551234567,15557654321,2005-03-15,Male,10,auth2_postMan,01122624338,https://example.com/photos/john.jpg
-sarah.smith@school.com,Sarah,Smith,sarah.smith2@example.com,15552345678,15558765432,2006-07-22,Female,9,auth2_postMan,01122624338,
-mike.jones@school.com,Mike,Jones,mike.jones2@example.com,15553456789,15559876543,2004-11-05,Male,11,auth2_postMan,01122624338,https://example.com/photos/mike.png
-emily.wang@school.com,Emily,Wang,emily.wang2@example.com,15554567890,15551098765,2007-02-28,Female,8,auth2_postMan,01122624338,
-alex.garcia@school.com,Alex,Garcia,alex.garcia2@example.com,15555678901,15552123456,2005-09-12,Other,10,auth2_postMan,01122624338,https://example.com/photos/alex.jpg
