@@ -1,5 +1,5 @@
 
-## Release [5.7.10] - 2025-10-07  **(Current)**
+## Release [5.7.10] - 2025-10-07   **→ (Current)**
 
 ### Changed
 - **Enhanced Deployment**
