@@ -23,7 +23,7 @@ module.exports = {
             repo: "git@github.com:Badawy403/weallbeam.git",
             path: "/var/www/weallbeam/production-backend",
             "post-deploy": "npm install && pm2 reload ecosystem.config.js --env production",
-            shared: ["uploads"]     
+            shared: ["uploads","logs"]     
         }
     }
 }

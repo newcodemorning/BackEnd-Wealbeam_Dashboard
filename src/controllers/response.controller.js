@@ -2,13 +2,17 @@ const responseService = require('../services/response.service');
 
 exports.submitFormResponse = async (req, res) => {
     try {
-        const { student, form, answers } = req.body;
+        const { form, answers } = req.body;
+
+        const studentId = req.user.roleId; 
+      
+        console.log('Received form response:', req.body);
 
         if (!Array.isArray(answers) || !answers.length) {
             throw new Error('Answers must be a non-empty array');
         }
 
-        const response = await responseService.processFormResponse(student, form, answers);
+        const response = await responseService.processFormResponse(studentId, form, answers);
 
         res.json({
             success: true,

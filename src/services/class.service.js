@@ -315,9 +315,9 @@ const getClassesBySchoolId = async (schoolId) => {
 
   // Get classes for the school
   const classes = await Class.find({ school: schoolId })
-    .populate('teacher', '-password') // Populate teacher details
-    .populate('students') // Populate student details
-    .populate('school', '-password'); // Populate school details
+    .populate('teacher', '-password')
+    .populate('students') 
+    .populate('school', '-password');
 
   return classes;
 };

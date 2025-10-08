@@ -11,7 +11,6 @@ const answerSchema = Joi.object({
 });
 
 const responseSchema = Joi.object({
-    student: Joi.string().required(),
     form: Joi.string().required(),
     answers: Joi.array().items(answerSchema).min(1).required(),
     timestamp: Joi.date().iso()

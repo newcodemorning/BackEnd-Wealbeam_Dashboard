@@ -38,7 +38,7 @@ exports.updateProfile = async (req, res) => {
         const updateData = req.body;
         const file = req.file; // Get uploaded file
 
-        console.log(`[UPDATING PROFILE] for role: ${role}, roleId: ${roleId} with data:`, updateData);
+
 
         let updatedProfile;
         switch (role) {

@@ -19,6 +19,7 @@ exports.createForm = async (req, res) => {
 exports.getForm = async (req, res) => {
     try {
         const { subject } = req.params;
+        
         const form = await questionService.getFormBySubject(subject);
         
         if (!form) {

@@ -5,6 +5,7 @@ const Student = require('../models/student.model');
 const Class = require('../models/class.model');
 
 class ResponseService {
+
     async processFormResponse(studentId, formId, answers) {
         const student = await Student.findById(studentId).populate('class');
         if (!student) throw new Error('Student not found');
@@ -13,16 +14,23 @@ class ResponseService {
         const form = await Form.findById(formId);
         if (!form) throw new Error('Form not found');
 
+        
+
         // Validate that the form subject matches the student's class subject
-        if (form.subject !== student.class.Subject) {
-            throw new Error('Form subject does not match student\'s class subject');
-        }
+
+        // TODO: re-enable this check if forms are strictly tied to class subjects
+        // if (form.subject !== student.class.Subject) {
+        //     throw new Error('Form subject does not match student\'s class subject');
+        // }
 
         // Create question map for validation
         const questionMap = form.questions.reduce((acc, q) => {
             acc[q._id.toString()] = q;
             return acc;
         }, {});
+
+
+
 
         // Process all answers
         const processedAnswers = await Promise.all(
@@ -53,6 +61,23 @@ class ResponseService {
                 };
             })
         );
+
+
+        // cheack of the student has submit form in this day or not
+
+        const lastSubmet = await Response.findOne({ student: studentId })
+            .sort({ timestamp: -1 });
+
+        if (lastSubmet) {
+            const lastDate = new Date(lastSubmet.timestamp);
+            const currentDate = new Date();
+            console.log('Last submitted date:', lastDate);
+            console.log('Current date:', currentDate);
+
+            if (lastDate.toDateString() === currentDate.toDateString()) {
+                throw new Error('Form already submitted today - only one submission per day allowed');
+            }
+        }
 
         return Response.create({
             student: studentId,
