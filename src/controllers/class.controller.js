@@ -78,11 +78,50 @@ const deleteClass = async (req, res) => {
   }
 };
 
+
+const addTeacherToClass = async (req, res) => {
+  try {
+    const { classId, teacherId } = req.body;
+    if (!classId || !teacherId) {
+      return res.status(400).json({ message: 'classId and teacherId are required' });
+    }
+
+    const updatedClass = await classService.addTeacherToClass(classId, teacherId);
+    if (!updatedClass) {
+      return res.status(404).json({ message: 'Class or Teacher not found' });
+    }
+    res.status(200).json(updatedClass);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const removeTeacherFromClass = async (req, res) => {
+  try {
+    const { classId, teacherId } = req.body;
+    if (!classId || !teacherId) {
+      return res.status(400).json({ message: 'classId and teacherId are required' });
+    }
+    
+    const updatedClass = await classService.removeTeacherFromClass(classId, teacherId);
+    if (!updatedClass) {
+      return res.status(404).json({ message: 'Class or Teacher not found' });
+    }
+    res.status(200).json(updatedClass);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+
 module.exports = {
   getClasses,
   getClassById,
   createClass,
   updateClass,
   deleteClass,
-  getClassesBySchool
+  getClassesBySchool,
+  addTeacherToClass,
+  removeTeacherFromClass
 };

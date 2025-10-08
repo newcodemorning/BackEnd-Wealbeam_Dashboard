@@ -6,8 +6,12 @@ module.exports = {
             watch: false,
             env: {
                 NODE_ENV: "production",
-
             },
+            max_restarts: 10,             
+            error_file: "./logs/error.log",
+            out_file: "./logs/out.log",
+            log_file: "./logs/combined.log",
+            merge_logs: true,
         }
     ],
 

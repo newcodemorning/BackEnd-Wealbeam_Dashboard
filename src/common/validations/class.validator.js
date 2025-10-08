@@ -53,8 +53,23 @@ const updateClassSchema = Joi.object({
 }).min(1); // لازم يبقى في حقل واحد على الأقل للتحديث
 
 
+const updateClassTeacherSchema = Joi.object({
+    classId: Joi.string().hex().length(24).required().messages({
+        'string.hex': 'Class ID must be a valid hexadecimal value',
+        'string.length': 'Class ID must be 24 characters long',
+        'any.required': 'Class ID is required'
+    }),
+    teacherId: Joi.string().hex().length(24).required().messages({
+        'string.hex': 'Teacher ID must be a valid hexadecimal value',
+        'string.length': 'Teacher ID must be 24 characters long',
+        'any.required': 'Teacher ID is required'
+    })
+});
+
+
 
 module.exports = {
     classSchema,
-    updateClassSchema
+    updateClassSchema,
+    updateClassTeacherSchema
 };

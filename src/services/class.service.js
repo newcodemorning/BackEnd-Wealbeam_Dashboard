@@ -179,6 +179,59 @@ const updateClass = async (id, updatedData) => {
   return updatedClass;
 };
 
+
+
+const addTeacherToClass = async (classId, teacherId) => {
+  
+  // Validate class existence
+  const classDoc = await Class.findById(classId);
+  if (!classDoc) {
+    throw new Error("Class not found.");
+  }
+
+  // Validate teacher existence
+  const teacherExists = await Teacher.findById(teacherId);
+  if (!teacherExists) {
+    throw new Error("Teacher not found.");
+  }
+
+  // Check if the teacher is already assigned to the class
+  if (classDoc.subTeachers.includes(teacherId)) {
+    throw new Error("Teacher is already assigned to this class.");
+  }
+
+  // Add the teacher to the class
+  classDoc.subTeachers.push(teacherId);
+  await classDoc.save();
+  return classDoc;
+};
+
+const removeTeacherFromClass = async (classId, teacherId) => {
+  // Validate class existence
+  const classDoc = await Class.findById(classId);
+  if (!classDoc) {
+    throw new Error("Class not found.");
+  }
+  
+  // Validate teacher existence
+  const teacherExists = await Teacher.findById(teacherId);
+  if (!teacherExists) {
+    throw new Error("Teacher not found.");
+  }
+
+  // Check if the teacher is assigned to the class
+  if (!classDoc.subTeachers.includes(teacherId)) {
+    throw new Error("Teacher is not assigned to this class.");
+  }
+
+  // Remove the teacher from the class
+  classDoc.subTeachers = classDoc.subTeachers.filter(id => id.toString() !== teacherId);
+  await classDoc.save();
+  return classDoc;
+};
+
+
+
 const deleteClass = async (id) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -275,5 +328,7 @@ module.exports = {
   getClassById,
   updateClass,
   deleteClass,
-  getClassesBySchoolId
+  getClassesBySchoolId,
+  addTeacherToClass,
+  removeTeacherFromClass
 };

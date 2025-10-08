@@ -67,7 +67,7 @@ app.use((err, req, res, next) => {
 });
 
 
-app.get("/", (req, res) => res.send("Hello, welcome to the weallbeamtogether API! v5.7.10 :)"));
+app.get("/", (req, res) => res.send("Hello, welcome to the weallbeamtogether API! v5.7.10.2 :)"));
 
 // Apply authentication and authorization middleware
 

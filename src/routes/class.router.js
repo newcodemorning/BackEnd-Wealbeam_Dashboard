@@ -1,7 +1,7 @@
 const express = require('express');
 const classController = require('../controllers/class.controller');
 const { validate } = require('../common/middleware/validation');
-const { classSchema, updateClassSchema } = require('../common/validations/class.validator');
+const { classSchema, updateClassSchema, updateClassTeacherSchema  } = require('../common/validations/class.validator');
 const { authenticateUser, authorizeRole } = require('../common/middleware/auth');
 const multer = require('multer');
 
@@ -25,6 +25,12 @@ router.post('/', authorizeRole(['super-admin', 'school']), formParser, validate(
 
 // Update a class (school can update their classes, teacher can update their classes)
 router.put('/:id', authorizeRole(['super-admin', 'school', 'teacher']), formParser, validate(updateClassSchema), classController.updateClass);
+
+// Update a class (add new teacher to class)
+router.post('/teacher', authorizeRole(['super-admin', 'school']), formParser, validate(updateClassTeacherSchema), classController.addTeacherToClass);
+
+// Update a class (remove teacher from class)
+router.delete('/teacher', authorizeRole(['super-admin', 'school']), formParser, validate(updateClassTeacherSchema), classController.removeTeacherFromClass);
 
 // Delete a class (only school can delete classes)
 router.delete('/:id', authorizeRole(['super-admin', 'school']), classController.deleteClass);

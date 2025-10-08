@@ -6,6 +6,7 @@ const classSchema = new mongoose.Schema({
     Subject: { type: String },
     school: { type: mongoose.Schema.Types.ObjectId, ref: "School" },
     teacher: { type: mongoose.Schema.Types.ObjectId, ref: "Teacher", default: null },
+    subTeachers: { type: [mongoose.Schema.Types.ObjectId], ref: "Teacher", default: [] },
     students: [{ type: mongoose.Schema.Types.ObjectId, ref: "Student" }],
 });
 

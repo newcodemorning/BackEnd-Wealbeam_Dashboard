@@ -1,6 +1,38 @@
 
-## Release [5.7.10] - 2025-10-07   **→ (Current)**
 
+
+
+## Release [5.10.8]    **→ (Current)**
+`update time : 2025-10-08`
+
+### Changed
+- **Profile Service**
+  - Added `first_email` field to the student profile response to include the student's email address
+  - Updated Mongoose population to include the `user` field for retrieving the email
+  
+### Description
+> **Service Name:** `Profile Service`  
+> **Functionality:** Manages student profiles and related data  
+> **Database:** MongoDB with Mongoose ORM
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---
+
+## Release [5.10.7] - 2025-10-07
+`update time : 2025-10-07`
 ### Changed
 - **Enhanced Deployment**
   - Added environment configuration for production deployment
@@ -19,5 +51,6 @@
 ### Fixed
 - **CORS Configuration**
   - Resolved cross-origin resource sharing issues caused by Vite's optimized dependencies cache corruption
+
 
 

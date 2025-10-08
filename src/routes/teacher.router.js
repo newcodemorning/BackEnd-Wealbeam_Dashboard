@@ -38,6 +38,8 @@ router.put('/:id', authorizeRole(['super-admin', 'school', 'teacher']), upload.s
   // validate(updateTeacherSchema),
   teacherController.updateTeacher);
 
+
+
 // Delete a teacher (only school can delete their teachers)
 router.delete('/:id', authorizeRole(['super-admin', 'school']), teacherController.deleteTeacher);
 
