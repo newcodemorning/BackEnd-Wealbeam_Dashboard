@@ -63,6 +63,9 @@ class ProfileService {
                     select: 'first_name last_name photo',
                     model: 'Student'
                 }
+            }).populate({
+                path: 'user',
+                select: 'email'
             });
 
         if (!teacher) {
@@ -84,15 +87,42 @@ class ProfileService {
                     select: 'ClassName'
                 }
             });
+        
+        /*
+        {
+    "id": "6810206057d49a1a05a0867c",
+    "first_name": "Mohammed",
+    "last_name": "Kamil",
+    "photo": "https://storage.googleapis.com/weallbeam-dashboard.firebasestorage.app/uploads/students/student-bc360b59-b3fc-4d5f-b0b5-ab33ff59a29c.jpg",
+    "second_email": "mohammed _kamil_secondary@example.com",
+    "first_phone": "1223",
+    "second_phone": "0190851885",
+    "date_of_birth": "1996-05-05T00:00:00.000Z",
+    "gender": "Male",
+    "ClassName": "5A",
+    "Subject": "Year 5-6",
+    "parent": null,
+    "incidents": [],
+    "totalIncidents": 0,
+    "first_email": "RGS0001220@rgs.edu.sa"
+}
+    */
 
         return {
+            id: teacher._id,
             first_name: teacher.first_name,
             last_name: teacher.last_name,
             photo: teacher.photo,
+            second_email: teacher.second_email,
+            first_email: teacher.user?.email,
+            first_phone: teacher.first_phone,
+            second_phone: teacher.second_phone,
+            date_of_birth: teacher.date_of_birth,
             age: teacher.age,
             title: teacher.title,
             gender: teacher.gender,
-            school: teacher.school,
+            schoolID: teacher.school._id,
+            schoolName: teacher.school.schoolName,
             classes: teacher.classes,
             recentIncidents,
             totalClasses: teacher.classes.length,
@@ -115,7 +145,7 @@ class ProfileService {
                 path: 'parent',
                 select: 'first_name last_name email phone'
             }).populate({
-                path: 'user', select: 'email' 
+                path: 'user', select: 'email'
             });
 
         if (!student) {
@@ -140,7 +170,8 @@ class ProfileService {
             second_phone: student.second_phone,
             date_of_birth: student.date_of_birth,
             gender: student.gender,
-            class: student.class,
+            ClassName: student.class.ClassName,
+            Subject: student.class.Subject,
             parent: student.parent,
             incidents,
             totalIncidents: incidents.length,
@@ -183,56 +214,58 @@ class ProfileService {
             .sort({ created_at: -1 });
 
         return {
-            parent: {
-                id: parent._id,
-                first_name: parent.first_name,
-                last_name: parent.last_name,
-                first_email: parent.first_email,
-                second_email: parent.second_email,
-                first_phone: parent.first_phone,
-                second_phone: parent.second_phone,
-                gender: parent.gender,
-                date_of_birth: parent.date_of_birth,
-                profile_image: parent.profile_image,
-                first_email: parent.user.email
-            },
-            students: parent.students.map(student => ({
-                id: student._id,
-                name: `${student.first_name} ${student.last_name}`,
-                class: student.class ? {
-                    id: student.class._id,
-                    name: student.class.name,
-                    teacher: student.class.teacher ? {
-                        id: student.class.teacher._id,
-                        name: `${student.class.teacher.first_name} ${student.class.teacher.last_name}`,
-                        title: student.class.teacher.title
-                    } : null
-                } : null
-            })),
-            incidents: incidents.map(incident => ({
-                id: incident._id,
-                type: incident.type,
-                description: incident.description,
-                status: incident.status,
-                created_at: incident.created_at,
-                student: {
-                    id: incident.student._id,
-                    name: `${incident.student.first_name} ${incident.student.last_name}`
-                },
-                class: incident.class ? {
-                    id: incident.class._id,
-                    name: incident.class.name,
-                    teacher: incident.class.teacher ? {
-                        id: incident.class.teacher._id,
-                        name: `${incident.class.teacher.first_name} ${incident.class.teacher.last_name}`,
-                        title: incident.class.teacher.title
-                    } : null
-                } : null
-            })),
-            stats: {
-                total_students: parent.students.length,
-                total_incidents: incidents.length
-            }
+
+            id: parent._id,
+            first_name: parent.first_name,
+            last_name: parent.last_name,
+            first_email: parent.first_email,
+            second_email: parent.second_email,
+            first_phone: parent.first_phone,
+            second_phone: parent.second_phone,
+            gender: parent.gender,
+            date_of_birth: parent.date_of_birth,
+            profile_image: parent.profile_image,
+            first_email: parent.user.email,
+            photo: null,
+
+
+            // students: parent.students.map(student => ({
+            //     id: student._id,
+            //     name: `${student.first_name} ${student.last_name}`,
+            //     class: student.class ? {
+            //         id: student.class._id,
+            //         name: student.class.name,
+            //         teacher: student.class.teacher ? {
+            //             id: student.class.teacher._id,
+            //             name: `${student.class.teacher.first_name} ${student.class.teacher.last_name}`,
+            //             title: student.class.teacher.title
+            //         } : null
+            //     } : null
+            // })),
+            // incidents: incidents.map(incident => ({
+            //     id: incident._id,
+            //     type: incident.type,
+            //     description: incident.description,
+            //     status: incident.status,
+            //     created_at: incident.created_at,
+            //     student: {
+            //         id: incident.student._id,
+            //         name: `${incident.student.first_name} ${incident.student.last_name}`
+            //     },
+            //     class: incident.class ? {
+            //         id: incident.class._id,
+            //         name: incident.class.name,
+            //         teacher: incident.class.teacher ? {
+            //             id: incident.class.teacher._id,
+            //             name: `${incident.class.teacher.first_name} ${incident.class.teacher.last_name}`,
+            //             title: incident.class.teacher.title
+            //         } : null
+            //     } : null
+            // })),
+            // stats: {
+            //     total_students: parent.students.length,
+            //     total_incidents: incidents.length
+            // }
         };
     }
 
@@ -253,20 +286,21 @@ class ProfileService {
             throw new Error('Super Admin profile not found');
         }
 
+        console.log("✅ Found SuperAdmin profile:", superAdmin);
+
         return {
             id: user._id,
-            email: user.email,
+            first_name: superAdmin.firstName,
+            last_name: superAdmin.lastName,
+            photo: superAdmin.photo,
+            first_email: superAdmin.firstEmail,
+            second_email: superAdmin.secondEmail,
+            first_phone: superAdmin.firstPhone,
+            second_phone: superAdmin.secondPhone,
+            date_of_birth: superAdmin.dateOfBirth,
+            gender: superAdmin.gender,
             role: user.role,
-            profile: {
-                id: superAdmin._id,
-                firstName: superAdmin.firstName,
-                lastName: superAdmin.lastName,
-                address: superAdmin.address,
-                photo: superAdmin.photo,
-                phoneNumber: superAdmin.phoneNumber,
-                firstEmail: superAdmin.firstEmail,
-                secondEmail: superAdmin.secondEmail
-            }
+            address: superAdmin.address,
         };
     }
 

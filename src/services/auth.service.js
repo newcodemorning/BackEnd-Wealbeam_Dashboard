@@ -60,6 +60,8 @@ class AuthService {
    */
   async login(email, password) {
     const user = await User.findOne({ email });
+    console.log( email);
+    console.log(user);
     
     if (!user) {
       throw new Error('Invalid email or password');
