@@ -8,6 +8,15 @@ class QuestionService {
             throw new Error('Form with this subject already exists');
         }
 
+        const checkSpaces = formData.subject.split(' ').length;
+        if (checkSpaces > 1) {
+            throw new Error('Subject should not contain spaces');
+        }
+
+        if (!formData.questions || formData.questions.length === 0) {
+            throw new Error('Form must contain at least one question');
+        }
+
         // Validate question orders are sequential
         const orders = formData.questions.map(q => q.order);
         const expectedOrders = Array.from({ length: orders.length }, (_, i) => i + 1);
