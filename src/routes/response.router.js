@@ -11,8 +11,18 @@ router.use(authenticateUser);
 // Submit a form response
 router.post('/submit', authorizeRole(['student']), validate(responseSchema), responseController.submitFormResponse);
 
-// Get all responses for school (school can see their responses)
-// router.get('/:id', authorizeRole(['super-admin', 'school', 'teacher', 'parent']), responseController.getResponse);
+// Get all responses for school (school can see their responses) by date range
+router.get('/:id', authorizeRole(['super-admin', 'school', 'teacher', 'parent']), responseController.getSchoolResponsesStatistics);
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -50,3 +50,23 @@ exports.getStudentStatus = async (req, res) => {
         });
     }
 };
+
+
+exports.getSchoolResponsesStatistics = async (req, res) => {
+    try {
+        const schoolId = req.params.id;
+        const day = req.query.day || new Date().toISOString().split('T')[0];
+
+        const statistics = await responseService.getSchoolResponsesStatistics(schoolId, day);
+
+        res.json({
+            success: true,
+            data: statistics
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+};

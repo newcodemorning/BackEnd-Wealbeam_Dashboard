@@ -7,14 +7,17 @@ const Class = require('../models/class.model');
 class ResponseService {
 
     async processFormResponse(studentId, formId, answers) {
+
+
+
         const student = await Student.findById(studentId).populate('class');
-        if (!student) throw new Error('Student not found');
-        if (!student.class) throw new Error('Student is not assigned to any class');
+        // if (!student) throw new Error('Student not found');
+        // if (!student.class) throw new Error('Student is not assigned to any class');
 
         const form = await Form.findById(formId);
         if (!form) throw new Error('Form not found');
 
-        
+
 
         // Validate that the form subject matches the student's class subject
 
@@ -56,6 +59,7 @@ class ResponseService {
                         type: question.type
                     },
                     answer: answerObj.answer,
+
                     status: this.calculateStatus(question, answerObj.answer),
                     trend: question.type === 'slider' ? await this.calculateTrend(studentId, question._id, answerObj.answer) : null
                 };
@@ -68,16 +72,19 @@ class ResponseService {
         const lastSubmet = await Response.findOne({ student: studentId })
             .sort({ timestamp: -1 });
 
-        if (lastSubmet) {
-            const lastDate = new Date(lastSubmet.timestamp);
-            const currentDate = new Date();
-            console.log('Last submitted date:', lastDate);
-            console.log('Current date:', currentDate);
 
-            if (lastDate.toDateString() === currentDate.toDateString()) {
-                throw new Error('Form already submitted today - only one submission per day allowed');
-            }
-        }
+        // TODO: re-enable this check if only one submission per day is allowed
+
+        // if (lastSubmet) {
+        //     const lastDate = new Date(lastSubmet.timestamp);
+        //     const currentDate = new Date();
+        //     console.log('Last submitted date:', lastDate);
+        //     console.log('Current date:', currentDate);
+
+        //     if (lastDate.toDateString() === currentDate.toDateString()) {
+        //         throw new Error('Form already submitted today - only one submission per day allowed');
+        //     }
+        // }
 
         return Response.create({
             student: studentId,
@@ -97,7 +104,7 @@ class ResponseService {
             case 'dropdown':
             case 'radiobutton':
                 const selectedOption = question.options.find(opt =>
-                    opt.text.toLowerCase() === answer.toLowerCase() || 
+                    opt.text.toLowerCase() === answer.toLowerCase() ||
                     opt.name.toLowerCase() === answer.toLowerCase()
                 );
                 return selectedOption?.isDanger ? 'red' : 'green';
@@ -174,6 +181,139 @@ class ResponseService {
         };
 
         return statusReport;
+    }
+
+    async getSchoolResponsesStatistics(schoolId, day) {
+        const classes = await Class.find({ school: schoolId });
+        const classIds = classes.map(c => c._id);
+
+        const students = await Student.find({ class: { $in: classIds } });
+        const studentIds = students.map(s => s._id);
+
+        // حساب المدى الزمني
+        const start = new Date(day);
+        const end = new Date(day);
+        end.setDate(end.getDate() + 1);
+
+
+
+        const prevStart = new Date(start);
+        const prevEnd = new Date(start);
+        prevStart.setDate(prevStart.getDate() - 1);
+
+        // helper function to fetch responses
+        async function fetchResponses(rangeStart, rangeEnd) {
+            return Response.find({
+                student: { $in: studentIds },
+                timestamp: { $gte: rangeStart, $lt: rangeEnd }
+            }).populate("student").populate("form");
+        }
+
+        const [todayResponses, prevResponses] = await Promise.all([
+            fetchResponses(start, end),
+            fetchResponses(prevStart, start)
+        ]);
+
+        // function to build statistics
+        function buildStatistics(responses) {
+            const questionsMap = {};
+            let totalResponses = 0;
+            let totalSum = 0;
+            let totalCount = 0;
+
+            for (const response of responses) {
+                totalResponses++;
+
+                for (const answer of response.answers) {
+                    const qId = answer.question.id.toString();
+
+                    if (!questionsMap[qId]) {
+                        questionsMap[qId] = {
+                            id: qId,
+                            text: answer.question.text,
+                            type: answer.question.type,
+                            values: {},
+                            average: 0
+                        };
+                    }
+
+                    const qStats = questionsMap[qId];
+                    const val = answer.answer;
+
+                    // frequency
+                    qStats.values[val] = (qStats.values[val] || 0) + 1;
+                }
+            }
+
+            // calculate averages
+            for (const qId of Object.keys(questionsMap)) {
+                const q = questionsMap[qId];
+
+                if (q.type === "slider") {
+                    let sum = 0, count = 0;
+
+                    for (const [val, freq] of Object.entries(q.values)) {
+                        // Try to parse as number first
+                        const num = parseInt(val, 10);
+
+                        if (!isNaN(num)) {
+                            sum += num * freq;
+                            count += freq;
+                        }
+                    }
+
+                    if (count > 0) {
+                        q.average = parseFloat((sum / count).toFixed(2));
+                        totalSum += sum;
+                        totalCount += count;
+                    } else {
+                        // If no numeric values found, just show most common answer
+                        let maxFreq = 0;
+                        let mostCommon = null;
+
+                        for (const [val, freq] of Object.entries(q.values)) {
+                            if (freq > maxFreq) {
+                                maxFreq = freq;
+                                mostCommon = val;
+                            }
+                        }
+
+                        q.average = mostCommon || "N/A";
+                    }
+                } else {
+                    // For non-slider questions, find the most common answer
+                    let maxFreq = 0;
+                    let mostCommon = null;
+
+                    for (const [val, freq] of Object.entries(q.values)) {
+                        if (freq > maxFreq) {
+                            maxFreq = freq;
+                            mostCommon = val;
+                        }
+                    }
+
+                    q.average = mostCommon || "N/A";
+                }
+            }
+
+            const totalAverage = totalCount > 0 ? parseFloat((totalSum / totalCount).toFixed(2)) : 0;
+
+            // Convert questionsMap to array
+            const questions = Object.values(questionsMap);
+
+            return {
+                totalResponses,
+                questions,
+                // totalAverage
+            };
+        }
+
+        return {
+
+            today: buildStatistics(todayResponses),
+            previousDay: buildStatistics(prevResponses)
+
+        };
     }
 
     getStatusColor(score) {
