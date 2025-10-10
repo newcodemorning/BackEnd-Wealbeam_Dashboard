@@ -1,21 +1,36 @@
-## Release [5.10.8]    **→ (Current)**
+## Release [5.10.10]    **→ (Current)**
+`update time : 2025-10-10`
+
+### Changed
+  - Added endpoint to retrieve the daily form
+  - Added service method to fetch the daily form from the database
+  - Added endpoint to retrieve school responses statistics by date range
+  - Added service method to aggregate and return response statistics for a school
+
+### Description
+> **Daily Form Functionality:**  
+> in this update, we have added a new feature to get the daily status form students need to fill out every day
+> and this will help teachers and schools to monitor the daily mood their students
+> 
+> in admin/school panel, we have added statistics for the responses submitted by students and we compare them by the previous day
+> and show the differences in percentages for each question **(trend)**
+
+---
+
+## Release [5.10.8]   
 `update time : 2025-10-09`
 
 ### Changed
-- **Profile**
   - return first_email field to the student profile response 
   - Updated Mongoose population to include the `user` field for retrieving the email
-- **Ecosystem Configuration**
   - Enhanced `ecosystem.config.js` to include shared directories for `uploads` and `logs` to ensure persistent storage across deployments
-- **Question Service**
   - Added validation to ensure that the `subject` field does not contain spaces
-- **SubTeacher**
   - Added endpoints for SubTeachers to retrieve class lists and student information
 
 ### Description
 > **SubTeacher Functionality:**  
-> enhable to add more teachers to a class and allow them to access student information
-> for each class inially created by the main teacher
+> enable to add more teachers to a class and allow them to access student information
+> for each class initially created by the main teacher
 > we can add multiple teachers to a class and they can access the students in that class or remove them
 
 
@@ -24,7 +39,6 @@
 ## Release [5.10.7] 
 `update time : 2025-10-07`
 ### Changed
-- **Enhanced Deployment**
   - Added environment configuration for production deployment
 
 ### Description
@@ -36,4 +50,17 @@
 > The application is managed using pm2 to ensure reliability in a production environment and runs on port 4000.
 
 
+---
+
+## Release [5.10.5] 
+`update time : 2025-10-06`
+### Changed
+  - enabled teachers to add multiple teachers to a class
+  - enabled sub-teachers to view class students and their information
+
+
+
+### Description
+> **Sub-Teacher Functionality:**
+> This update introduces the ability for sub-teachers to access and manage their assigned classes more effectively. Sub-teachers can now view class lists, student information, and contribute to the teaching process without needing full teacher permissions.
 
