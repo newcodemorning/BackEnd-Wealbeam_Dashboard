@@ -51,6 +51,10 @@ class QuestionService {
         return Form.findOne({ subject }).lean();
     }
 
+    async getDailyForm() {
+        return Form.findOne({ subject: 'daily' }).lean();
+    }
+
     async getAllForms() {
         return Form.find().lean();
     }

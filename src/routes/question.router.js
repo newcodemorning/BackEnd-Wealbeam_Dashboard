@@ -16,8 +16,14 @@ router.post('/', authorizeRole(['super-admin', 'school']),  questionController.c
 // Get all forms
 router.get('/', authorizeRole(['super-admin', 'school', 'teacher', 'student']), questionController.getAllForms);
 
+// Get daily form
+router.get('/daily', authorizeRole(['super-admin', 'school', 'teacher', 'student']), questionController.getDailyForm);
+
 // Get form by subject
 router.get('/:subject', authorizeRole(['super-admin', 'school', 'teacher', 'student']), questionController.getForm);
+
+
+
 
 // Update form by subject
 router.put('/:subject', authorizeRole(['super-admin', 'school']), validate(updateFormSchema), questionController.updateForm);

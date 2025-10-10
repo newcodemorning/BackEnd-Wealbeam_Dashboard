@@ -71,8 +71,6 @@ app.get("/", (req, res) => res.send("Hello, welcome to the weallbeamtogether API
 
 // Apply authentication and authorization middleware
 
-
-
 app.use("/auth", authRoutes);
 app.use("/faqs", faqsRoutes);
 app.use("/forum", forumRoutes);

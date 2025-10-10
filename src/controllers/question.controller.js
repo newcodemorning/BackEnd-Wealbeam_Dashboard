@@ -32,6 +32,22 @@ exports.getForm = async (req, res) => {
     }
 };
 
+
+
+exports.getDailyForm = async (req, res) => {
+    try {
+        const form = await questionService.getDailyForm();
+        
+        if (!form) {
+            return res.status(404).json({ error: 'Daily form not found' });
+        }
+        
+        res.json(form);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 exports.getAllForms = async (req, res) => {
     try {
         const forms = await questionService.getAllForms();

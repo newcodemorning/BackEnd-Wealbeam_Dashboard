@@ -16,6 +16,8 @@ router.post('/submit', authorizeRole(['student']), validate(responseSchema), res
 
 
 
+
+
 // Get student status (school can see their students' status, teacher can see their students' status, parent can see their children's status)
 // TODO: enhance and fix errors
 // router.get('/student-status/:studentId', authorizeRole(['super-admin', 'school', 'teacher', 'parent']), responseController.getStudentStatus);
