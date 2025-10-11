@@ -88,25 +88,10 @@ class ProfileService {
                 }
             });
         
-//         /*
-//         {
-//     "id": "6810206057d49a1a05a0867c",
-//     "first_name": "Mohammed",
-//     "last_name": "Kamil",
-//     "photo": "https://storage.googleapis.com/weallbeam-dashboard.firebasestorage.app/uploads/students/student-bc360b59-b3fc-4d5f-b0b5-ab33ff59a29c.jpg",
-//     "second_email": "mohammed _kamil_secondary@example.com",
-//     "first_phone": "1223",
-//     "second_phone": "0190851885",
-//     "date_of_birth": "1996-05-05T00:00:00.000Z",
-//     "gender": "Male",
-//     "ClassName": "5A",
-//     "Subject": "Year 5-6",
-//     "parent": null,
-//     "incidents": [],
-//     "totalIncidents": 0,
-//     "first_email": "RGS0001220@rgs.edu.sa"
-// }
-//     */
+
+        const allClasses = await Class.find({ teacher: teacher._id })
+            .populate('students', 'first_name last_name photo');
+            
 
         return {
             id: teacher._id,
