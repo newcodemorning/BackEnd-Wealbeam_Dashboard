@@ -52,6 +52,8 @@ class QuestionService {
     }
 
     async getDailyForm() {
+        
+
         return Form.findOne({ subject: 'daily' }).lean();
     }
 

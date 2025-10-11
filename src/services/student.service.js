@@ -554,17 +554,33 @@ const getStudentsByClassId = async (classId, req) => {
   }
 
   // Check if user has access to this class
+  // if (req.user.role === 'school') {
+  //   const school = await School.findOne({ user: req.user.id });
+  //   if (!school || classExists.school?.toString() !== school._id?.toString()) {
+  //     throw new Error("Access denied to this class");
+  //   }
+  // } else if (req.user.role === 'teacher') {
+  //   const teacher = await Teacher.findOne({ user: req.user.id });
+  //   if (!teacher || classExists?.teacher?.toString() !== teacher?._id?.toString()) {
+  //     throw new Error("Access denied to this class");
+  //   }
+  // }
+  
+  // check if the teacher is assigned to this class array
+  if (req.user.role === 'teacher') {
+    const teacher = await Teacher.findOne({ user: req.user.id });
+    if (!teacher || !teacher.classes.includes(classId)) {
+      throw new Error("Access denied to this class");
+    }
+  }
+
   if (req.user.role === 'school') {
     const school = await School.findOne({ user: req.user.id });
     if (!school || classExists.school?.toString() !== school._id?.toString()) {
       throw new Error("Access denied to this class");
     }
-  } else if (req.user.role === 'teacher') {
-    const teacher = await Teacher.findOne({ user: req.user.id });
-    if (!teacher || classExists?.teacher?.toString() !== teacher?._id?.toString()) {
-      throw new Error("Access denied to this class");
-    }
   }
+
 
   // Get students for the class
   const students = await Student.find({ class: classId })

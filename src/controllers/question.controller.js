@@ -19,13 +19,13 @@ exports.createForm = async (req, res) => {
 exports.getForm = async (req, res) => {
     try {
         const { subject } = req.params;
-        
+
         const form = await questionService.getFormBySubject(subject);
-        
+
         if (!form) {
             return res.status(404).json({ error: 'Form not found' });
         }
-        
+
         res.json(form);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -36,12 +36,30 @@ exports.getForm = async (req, res) => {
 
 exports.getDailyForm = async (req, res) => {
     try {
+
+        const studentId = req.user.roleId;
+        const lastSubmitted = await Response.findOne({ student: studentId }).sort({ timestamp: -1 });
+        if (lastSubmitted) {
+            const lastDate = new Date(lastSubmitted.timestamp);
+            const today = new Date();
+            if (lastDate.toDateString() === today.toDateString()) {
+                return res.status(208).json(
+                    {
+                        message: 'Daily form already submitted today, wait until tomorrow to submit again',
+                        lastSubmitted: lastSubmitted.timestamp,
+                    }
+                );
+            }
+        }
+
+
         const form = await questionService.getDailyForm();
-        
+
+
         if (!form) {
             return res.status(404).json({ error: 'Daily form not found' });
         }
-        
+
         res.json(form);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -80,11 +98,11 @@ exports.deleteForm = async (req, res) => {
     try {
         const { subject } = req.params;
         const result = await questionService.deleteForm(subject);
-        
+
         if (!result) {
             return res.status(404).json({ error: 'Form not found' });
         }
-        
+
         res.json({ message: 'Form deleted successfully' });
     } catch (error) {
         res.status(500).json({ error: error.message });
