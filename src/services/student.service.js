@@ -556,12 +556,12 @@ const getStudentsByClassId = async (classId, req) => {
   // Check if user has access to this class
   if (req.user.role === 'school') {
     const school = await School.findOne({ user: req.user.id });
-    if (!school || classExists.school.toString() !== school._id.toString()) {
+    if (!school || classExists.school?.toString() !== school._id?.toString()) {
       throw new Error("Access denied to this class");
     }
   } else if (req.user.role === 'teacher') {
     const teacher = await Teacher.findOne({ user: req.user.id });
-    if (!teacher || classExists.teacher.toString() !== teacher._id.toString()) {
+    if (!teacher || classExists?.teacher?.toString() !== teacher?._id?.toString()) {
       throw new Error("Access denied to this class");
     }
   }
@@ -569,8 +569,8 @@ const getStudentsByClassId = async (classId, req) => {
   // Get students for the class
   const students = await Student.find({ class: classId })
     .populate('user', 'email')
-    .populate('class')
-    .populate('parent');
+    .populate('class', '-students -teacher -subTeachers')
+    // .populate('parent');
 
   return students.map(student => {
     const studentData = student.toObject();
