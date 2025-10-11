@@ -89,7 +89,7 @@ const getTeachers = async (req) => {
     .populate('user', 'email') // Populate user email
     .populate('school') // Populate school details
     .populate('classes') // Populate class details
-    .populate('subTeachers'); // Populate sub-teachers details
+    // .populate('subTeachers'); // Populate sub-teachers details
 
   return teachers.map(teacher => ({
     email: teacher.user?.email,
