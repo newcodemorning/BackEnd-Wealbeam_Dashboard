@@ -58,11 +58,11 @@ class ProfileService {
             .populate({
                 path: 'classes',
                 select: 'ClassName Subject SelectDate',
-                populate: {
-                    path: 'students',
-                    select: 'first_name last_name photo',
-                    model: 'Student'
-                }
+                // populate: {
+                //     path: 'students',
+                //     select: 'first_name last_name photo',
+                //     model: 'Student'
+                // }
             }).populate({
                 path: 'user',
                 select: 'email'

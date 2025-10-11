@@ -180,55 +180,55 @@ const updateClass = async (id, updatedData) => {
 };
 
 
-
 const addTeacherToClass = async (classId, teacherId) => {
-  
-  // Validate class existence
-  const classDoc = await Class.findById(classId);
-  if (!classDoc) {
-    throw new Error("Class not found.");
-  }
+  const [classDoc, teacherDoc] = await Promise.all([
+    Class.findById(classId),
+    Teacher.findById(teacherId)
+  ]);
 
-  // Validate teacher existence
-  const teacherExists = await Teacher.findById(teacherId);
-  if (!teacherExists) {
-    throw new Error("Teacher not found.");
-  }
+  if (!classDoc) throw new Error("Class not found.");
+  if (!teacherDoc) throw new Error("Teacher not found.");
 
-  // Check if the teacher is already assigned to the class
-  if (classDoc.subTeachers.includes(teacherId)) {
+  if (classDoc.subTeachers.some(id => id.toString() === teacherId.toString())) {
     throw new Error("Teacher is already assigned to this class.");
   }
 
-  // Add the teacher to the class
+  await Teacher.findByIdAndUpdate(teacherId, {
+    $addToSet: { classes: classDoc._id }
+  });
+
   classDoc.subTeachers.push(teacherId);
   await classDoc.save();
+
   return classDoc;
 };
 
-const removeTeacherFromClass = async (classId, teacherId) => {
-  // Validate class existence
-  const classDoc = await Class.findById(classId);
-  if (!classDoc) {
-    throw new Error("Class not found.");
-  }
-  
-  // Validate teacher existence
-  const teacherExists = await Teacher.findById(teacherId);
-  if (!teacherExists) {
-    throw new Error("Teacher not found.");
-  }
 
-  // Check if the teacher is assigned to the class
-  if (!classDoc.subTeachers.includes(teacherId)) {
+const removeTeacherFromClass = async (classId, teacherId) => {
+  const [classDoc, teacherDoc] = await Promise.all([
+    Class.findById(classId),
+    Teacher.findById(teacherId)
+  ]);
+
+  if (!classDoc) throw new Error("Class not found.");
+  if (!teacherDoc) throw new Error("Teacher not found.");
+
+  if (!classDoc.subTeachers.some(id => id.toString() === teacherId.toString())) {
     throw new Error("Teacher is not assigned to this class.");
   }
 
-  // Remove the teacher from the class
-  classDoc.subTeachers = classDoc.subTeachers.filter(id => id.toString() !== teacherId);
+  await Teacher.findByIdAndUpdate(teacherId, {
+    $pull: { classes: classDoc._id }
+  });
+
+  classDoc.subTeachers = classDoc.subTeachers.filter(
+    id => id.toString() !== teacherId.toString()
+  );
   await classDoc.save();
+
   return classDoc;
 };
+
 
 
 
