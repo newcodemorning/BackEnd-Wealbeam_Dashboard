@@ -81,9 +81,17 @@ exports.getStudentStatus = async (req, res) => {
 exports.getSchoolResponsesStatistics = async (req, res) => {
     try {
         const schoolId = req.params.id;
-        const day = req.query.day || new Date().toISOString().split('T')[0];
+        const today = new Date();
 
-        const statistics = await responseService.getSchoolResponsesStatistics(schoolId, day);
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1);
+
+        const formDay = req.query.fromDay || yesterday.toISOString().split('T')[0];
+        const toDay = req.query.toDay || today.toISOString().split('T')[0];
+
+        
+
+        const statistics = await responseService.getSchoolResponsesStatistics(schoolId, formDay, toDay);
 
         res.json({
             success: true,

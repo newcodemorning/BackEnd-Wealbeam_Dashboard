@@ -46,14 +46,13 @@ const createClass = async (classData) => {
       $addToSet: { classes: savedClass._id },
     });
   }
-
   return savedClass;
 };
 
 
 const getAllClasses = async (req) => {
   let query = {};
-  
+
   // If user is a school, only get classes from their school
   if (req.user.role === 'school') {
     const school = await School.findOne({ user: req.user.id });
@@ -62,7 +61,7 @@ const getAllClasses = async (req) => {
     }
     query.school = school._id;
   }
-  
+
   // If user is a teacher, only get classes they teach
   if (req.user.role === 'teacher') {
     const teacher = await Teacher.findOne({ user: req.user.id });
@@ -72,10 +71,14 @@ const getAllClasses = async (req) => {
     query.teacher = teacher._id;
   }
 
+
   return await Class.find(query)
-    .populate('school')
+    .populate('school', '_id')
     .populate('teacher')
     .populate('students');
+
+
+
 };
 
 const getClassById = async (id, req) => {
@@ -101,7 +104,8 @@ const getClassById = async (id, req) => {
     }
   }
 
-  return classDoc;
+
+  return classData;
 };
 
 const updateClass = async (id, updatedData) => {
@@ -169,12 +173,12 @@ const updateClass = async (id, updatedData) => {
   }
 
   // Update class data
-  const updatedClass = await Class.findByIdAndUpdate(id, otherUpdates, { 
-    new: true 
+  const updatedClass = await Class.findByIdAndUpdate(id, otherUpdates, {
+    new: true
   })
-  .populate('school')
-  .populate('teacher')
-  .populate('students');
+    .populate('school')
+    .populate('teacher')
+    .populate('students');
 
   return updatedClass;
 };
@@ -316,7 +320,7 @@ const getClassesBySchoolId = async (schoolId) => {
   // Get classes for the school
   const classes = await Class.find({ school: schoolId })
     .populate('teacher', '-password')
-    .populate('students') 
+    .populate('students')
     .populate('school', '-password');
 
   return classes;

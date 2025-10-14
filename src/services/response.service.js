@@ -182,51 +182,55 @@ class ResponseService {
 
         return statusReport;
     }
-
-    async getSchoolResponsesStatistics(schoolId, day) {
-        const classes = await Class.find({ school: schoolId });
+    async getSchoolResponsesStatistics(schoolId, formDay, toDay) {
+        // Step 1: Find all classes and students related to this school
+        const classes = await Class.find({ school: schoolId }).select('_id');
         const classIds = classes.map(c => c._id);
 
-        const students = await Student.find({ class: { $in: classIds } });
+        const students = await Student.find({ class: { $in: classIds } }).select('_id');
         const studentIds = students.map(s => s._id);
 
-        // حساب المدى الزمني
-        const start = new Date(day);
-        const end = new Date(day);
-        end.setDate(end.getDate() + 1);
+        if(formDay > toDay) {
+            throw new Error('Invalid date range: "from" date must be earlier than "to" date');
+        }
 
+        // Step 2: Handle date range
+        const start = new Date(formDay);
+        const end = new Date(toDay);
+        end.setHours(23, 59, 59, 999); // include entire end day
 
-
+        // Previous period (same range length before the start date)
+        const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
         const prevStart = new Date(start);
+        prevStart.setDate(prevStart.getDate() - diffDays);
         const prevEnd = new Date(start);
-        prevStart.setDate(prevStart.getDate() - 1);
 
-        // helper function to fetch responses
+        // Step 3: Helper to fetch responses
         async function fetchResponses(rangeStart, rangeEnd) {
             return Response.find({
                 student: { $in: studentIds },
-                timestamp: { $gte: rangeStart, $lt: rangeEnd }
-            }).populate("student").populate("form");
+                timestamp: { $gte: rangeStart, $lte: rangeEnd },
+                subject: 'daily'
+            })
+                .populate('student', 'name')
+                .populate('form', 'title');
         }
 
-        const [todayResponses, prevResponses] = await Promise.all([
+        const [currentResponses, previousResponses] = await Promise.all([
             fetchResponses(start, end),
-            fetchResponses(prevStart, start)
+            fetchResponses(prevStart, prevEnd)
         ]);
 
-        // function to build statistics
+        // Step 4: Helper to build statistics
         function buildStatistics(responses) {
             const questionsMap = {};
-            let totalResponses = 0;
+            let totalResponses = responses.length;
             let totalSum = 0;
             let totalCount = 0;
 
             for (const response of responses) {
-                totalResponses++;
-
                 for (const answer of response.answers) {
                     const qId = answer.question.id.toString();
-
                     if (!questionsMap[qId]) {
                         questionsMap[qId] = {
                             id: qId,
@@ -237,25 +241,17 @@ class ResponseService {
                         };
                     }
 
-                    const qStats = questionsMap[qId];
                     const val = answer.answer;
-
-                    // frequency
-                    qStats.values[val] = (qStats.values[val] || 0) + 1;
+                    questionsMap[qId].values[val] = (questionsMap[qId].values[val] || 0) + 1;
                 }
             }
 
-            // calculate averages
-            for (const qId of Object.keys(questionsMap)) {
-                const q = questionsMap[qId];
-
+            for (const q of Object.values(questionsMap)) {
                 if (q.type === "slider") {
                     let sum = 0, count = 0;
 
                     for (const [val, freq] of Object.entries(q.values)) {
-                        // Try to parse as number first
-                        const num = parseInt(val, 10);
-
+                        const num = parseFloat(val);
                         if (!isNaN(num)) {
                             sum += num * freq;
                             count += freq;
@@ -267,52 +263,46 @@ class ResponseService {
                         totalSum += sum;
                         totalCount += count;
                     } else {
-                        // If no numeric values found, just show most common answer
-                        let maxFreq = 0;
-                        let mostCommon = null;
-
-                        for (const [val, freq] of Object.entries(q.values)) {
-                            if (freq > maxFreq) {
-                                maxFreq = freq;
-                                mostCommon = val;
-                            }
-                        }
-
-                        q.average = mostCommon || "N/A";
+                        q.average = getMostCommonAnswer(q.values);
                     }
                 } else {
-                    // For non-slider questions, find the most common answer
-                    let maxFreq = 0;
-                    let mostCommon = null;
-
-                    for (const [val, freq] of Object.entries(q.values)) {
-                        if (freq > maxFreq) {
-                            maxFreq = freq;
-                            mostCommon = val;
-                        }
-                    }
-
-                    q.average = mostCommon || "N/A";
+                    q.average = getMostCommonAnswer(q.values);
                 }
             }
 
-            const totalAverage = totalCount > 0 ? parseFloat((totalSum / totalCount).toFixed(2)) : 0;
-
-            // Convert questionsMap to array
-            const questions = Object.values(questionsMap);
+            const totalAverage =
+                totalCount > 0 ? parseFloat((totalSum / totalCount).toFixed(2)) : 0;
 
             return {
                 totalResponses,
-                questions,
-                // totalAverage
+                questions: Object.values(questionsMap),
+                totalAverage
             };
         }
 
+        // Step 5: Utility - most common answer
+        function getMostCommonAnswer(values) {
+            let maxFreq = 0;
+            let mostCommon = "N/A";
+            for (const [val, freq] of Object.entries(values)) {
+                if (freq > maxFreq) {
+                    maxFreq = freq;
+                    mostCommon = val;
+                }
+            }
+            return mostCommon;
+        }
+
+        // Step 6: Return final statistics
         return {
-
-            today: buildStatistics(todayResponses),
-            previousDay: buildStatistics(prevResponses)
-
+            currentRange: buildStatistics(currentResponses),
+            previousRange: buildStatistics(previousResponses),
+            dateRange: {
+                from: formDay,
+                to: toDay,
+                previousFrom: prevStart.toISOString().split('T')[0],
+                previousTo: prevEnd.toISOString().split('T')[0]
+            }
         };
     }
 

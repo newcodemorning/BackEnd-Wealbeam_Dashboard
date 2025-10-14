@@ -37,6 +37,8 @@ class ProfileService {
         }
 
         return {
+            schoolId: school._id,
+            
             schoolName: school.schoolName,
             address: school.address,
             phone: school.phone,
