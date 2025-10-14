@@ -1,4 +1,5 @@
 const responseService = require('../services/response.service');
+const Response = require('../models/response.model');
 
 exports.submitFormResponse = async (req, res) => {
     try {
@@ -6,7 +7,32 @@ exports.submitFormResponse = async (req, res) => {
 
         const studentId = req.user.roleId; 
       
-        console.log('Received form response:', req.body);
+        const lastSubmitted = await Response.findOne({ student: studentId }).sort({ timestamp: -1 });
+        console.log("Last submitted:", lastSubmitted);
+        if (lastSubmitted) {
+            const lastDate = new Date(lastSubmitted.timestamp);
+            const today = new Date();
+            console.log("Last submitted:", lastSubmitted);
+            console.log("Last today:", today);
+            if (lastDate.toDateString() === today.toDateString()) {
+                console.log("Daily form already submitted today:", lastSubmitted.timestamp);
+                return res.status(208).json(
+                    {
+                        success: false,
+                        status: 208,
+                        message: 'Daily form already submitted today, wait until tomorrow to submit again',
+                        lastSubmitted: lastSubmitted.timestamp,
+                    }
+                );
+            }
+        }
+
+
+
+
+
+
+
 
         if (!Array.isArray(answers) || !answers.length) {
             throw new Error('Answers must be a non-empty array');

@@ -1,6 +1,7 @@
 const { Form } = require('../models/question.model');
 const questionService = require('../services/question.service');
 const { createFormSchema, updateFormSchema } = require('../common/validations/question.validator');
+const Response = require('../models/response.model');
 
 exports.createForm = async (req, res) => {
     try {
@@ -37,20 +38,30 @@ exports.getForm = async (req, res) => {
 exports.getDailyForm = async (req, res) => {
     try {
 
-        const studentId = req.user.roleId;
+           const studentId = req.user.roleId; 
+              
         const lastSubmitted = await Response.findOne({ student: studentId }).sort({ timestamp: -1 });
+        console.log("Last submitted:", lastSubmitted);
         if (lastSubmitted) {
             const lastDate = new Date(lastSubmitted.timestamp);
             const today = new Date();
+            console.log("Last submitted:", lastSubmitted);
+            console.log("Last today:", today);
             if (lastDate.toDateString() === today.toDateString()) {
+                console.log("Daily form already submitted today:", lastSubmitted.timestamp);
                 return res.status(208).json(
                     {
+                        success: false,
+                        status: 208,
                         message: 'Daily form already submitted today, wait until tomorrow to submit again',
                         lastSubmitted: lastSubmitted.timestamp,
                     }
                 );
             }
         }
+
+        
+
 
 
         const form = await questionService.getDailyForm();
