@@ -3,6 +3,7 @@ const Response = require('../models/response.model');
 const { Question, Form } = require('../models/question.model');
 const Student = require('../models/student.model');
 const Class = require('../models/class.model');
+// const Form = require('../mod els/form.model');
 
 class ResponseService {
 
@@ -182,6 +183,8 @@ class ResponseService {
 
         return statusReport;
     }
+
+
     async getSchoolResponsesStatistics(schoolId, formDay, toDay) {
         // Step 1: Find all classes and students related to this school
         const classes = await Class.find({ school: schoolId }).select('_id');
@@ -205,32 +208,33 @@ class ResponseService {
         prevStart.setDate(prevStart.getDate() - diffDays);
         const prevEnd = new Date(start);
 
-        const allQuestionsIDthatSubject = await Question.find({ subject: 'daily' }).select('_id');
-
-
-
-        // Step 3: Helper to fetch responses
         async function fetchResponses(rangeStart, rangeEnd) {
-            const ResponseE = await Response.find({
-                student: { $in: studentIds },
-                'answers.question._id': { $in: allQuestionsIDthatSubject }
-            });
+        // 1️⃣ Get the form that has subject = 'daily'
+        const form = await Form.findOne({ subject: 'daily' });
 
-            console.log('ResponseE:', ResponseE);
-
-            // ResponseE.forEach(res => {
-            //     console.log('ResponseE:', res.answers);
-            // });
-
-            return Response.find({
-                student: { $in: studentIds },
-                timestamp: { $gte: rangeStart, $lte: rangeEnd },
-                // subject: 'daily'
-            })
-                .populate('student', 'name')
-                .populate('form', 'title');
-            
+        if (!form) {
+            console.log('Form with subject "daily" not found');
+            return [];
         }
+
+        // 2️⃣ Extract all question IDs from that form
+        const allQuestionIDs = form.questions.map(q => q._id);
+
+        // 3️⃣ Fetch all responses in the date range that include these questions
+        const responses = await Response.find({
+            student: { $in: studentIds },
+            'answers.question.id': { $in: allQuestionIDs },
+            timestamp: { $gte: rangeStart, $lte: rangeEnd }
+        })
+            .populate('student', 'name')
+            .populate('form', 'subject');
+
+        console.log('responses:', responses);
+
+        return responses;
+        }
+ 
+
 
         const [currentResponses, previousResponses] = await Promise.all([
             fetchResponses(start, end),
