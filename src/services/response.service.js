@@ -205,15 +205,31 @@ class ResponseService {
         prevStart.setDate(prevStart.getDate() - diffDays);
         const prevEnd = new Date(start);
 
+        const allQuestionsIDthatSubject = await Question.find({ subject: 'daily' }).select('_id');
+
+
+
         // Step 3: Helper to fetch responses
         async function fetchResponses(rangeStart, rangeEnd) {
+            const ResponseE = await Response.find({
+                student: { $in: studentIds },
+                'answers.question._id': { $in: allQuestionsIDthatSubject }
+            });
+
+            console.log('ResponseE:', ResponseE);
+
+            // ResponseE.forEach(res => {
+            //     console.log('ResponseE:', res.answers);
+            // });
+
             return Response.find({
                 student: { $in: studentIds },
                 timestamp: { $gte: rangeStart, $lte: rangeEnd },
-                subject: 'daily'
+                // subject: 'daily'
             })
                 .populate('student', 'name')
                 .populate('form', 'title');
+            
         }
 
         const [currentResponses, previousResponses] = await Promise.all([
