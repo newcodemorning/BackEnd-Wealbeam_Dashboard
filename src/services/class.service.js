@@ -73,9 +73,7 @@ const getAllClasses = async (req) => {
 
 
   return await Class.find(query)
-    .populate('school', '_id')
-    .populate('teacher')
-    .populate('students');
+    .populate('school', '_id schoolName').select('-students -subTeachers')
 
 
 

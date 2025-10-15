@@ -121,7 +121,7 @@ class ProfileService {
         const student = await Student.findById(studentId)
             .populate({
                 path: 'class',
-                select: 'ClassName Subject -_id',
+                select: 'ClassName Subject -_id school',
                 // populate: {
                 //     path: 'teacher',
                 //     select: 'first_name last_name',
@@ -162,7 +162,8 @@ class ProfileService {
             parent: student.parent,
             incidents,
             totalIncidents: incidents.length,
-            first_email: student.user?.email
+            first_email: student.user?.email,
+            schoolID: student.class.school
         };
     }
 
@@ -205,6 +206,7 @@ class ProfileService {
             id: parent._id,
             first_name: parent.first_name,
             last_name: parent.last_name,
+
             first_email: parent.first_email,
             second_email: parent.second_email,
             first_phone: parent.first_phone,
@@ -214,7 +216,7 @@ class ProfileService {
             profile_image: parent.profile_image,
             first_email: parent.user.email,
             photo: null,
-
+            
 
             // students: parent.students.map(student => ({
             //     id: student._id,

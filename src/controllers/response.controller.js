@@ -88,9 +88,6 @@ exports.getSchoolResponsesStatistics = async (req, res) => {
 
         const formDay = req.query.fromDay || yesterday.toISOString().split('T')[0];
         const toDay = req.query.toDay || today.toISOString().split('T')[0];
-
-        
-
         const statistics = await responseService.getSchoolResponsesStatistics(schoolId, formDay, toDay);
 
         res.json({
