@@ -106,7 +106,7 @@ class AuthService {
         roleId: roleId
       },
       process.env.JWT_SECRET,
-      { expiresIn: '5h' }
+      { expiresIn: '2d' }
     );
 
     return { 

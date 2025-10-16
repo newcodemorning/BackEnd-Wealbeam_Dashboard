@@ -32,8 +32,8 @@ mongoose
   .connect(process.env.MONGO_DATABASE_URL, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 30000, // 30 seconds
-  socketTimeoutMS: 45000, // 45 seconds
+      serverSelectionTimeoutMS: 30000, 
+  socketTimeoutMS: 45000,
   maxPoolSize: 10
 
   })

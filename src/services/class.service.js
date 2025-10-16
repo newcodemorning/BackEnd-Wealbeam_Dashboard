@@ -71,11 +71,37 @@ const getAllClasses = async (req) => {
     query.teacher = teacher._id;
   }
 
+  const classes = await Class.find(query)
+    .populate('school', '_id schoolName').populate('teacher', '-password').populate('subTeachers', '-password')
 
-  return await Class.find(query)
-    .populate('school', '_id schoolName').select('-students -subTeachers')
+
+  const Res = classes.map(cls => {
+    const classObj = cls.toObject();
+    const teacherLength =
+      (cls.teacher ? 1 : 0) + (cls.subTeachers ? cls.subTeachers.length : 0);
+    classObj.teacherLength = teacherLength;
+    const studentSize = cls.students ? cls.students.length : 0;
+    classObj.studentLength = studentSize;
+    classObj.mainTeacherName = {
+      _id: cls.teacher?._id,
+      name: cls.teacher?.first_name + ' ' + cls.teacher?.last_name
+    }
+    classObj.subTeacherNames = cls.subTeachers?.map(st => {
+      return {
+        _id: st._id,
+        name: st.first_name + ' ' + st.last_name
+      };
+    });
+    classObj.students = undefined;
+    classObj.__v = undefined;
+    classObj.teacher = undefined;
+    classObj.subTeachers = undefined;
 
 
+    return classObj;
+  });
+
+  return Res;
 
 };
 
