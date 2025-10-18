@@ -8,7 +8,6 @@ const multer = require('multer');
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Apply authentication to all routes
 router.use(authenticateUser);
 
 // Add a parent (school can add parents, teacher can add parents)
