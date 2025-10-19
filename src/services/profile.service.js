@@ -53,19 +53,20 @@ class ProfileService {
 
     async getTeacherProfile(teacherId) {
         const teacher = await Teacher.findById(teacherId)
+            // .populate({
+            //     path: 'school',
+            //     select: 'schoolName'
+            // })
+            // .populate({
+            //     path: 'classes',
+            //     select: 'ClassName Subject SelectDate',
+            //     populate: {
+            //         path: 'students',
+            //         select: 'first_name last_name photo',
+            //         model: 'Student'
+            //     }
+            // })
             .populate({
-                path: 'school',
-                select: 'schoolName'
-            })
-            .populate({
-                path: 'classes',
-                select: 'ClassName Subject SelectDate',
-                // populate: {
-                //     path: 'students',
-                //     select: 'first_name last_name photo',
-                //     model: 'Student'
-                // }
-            }).populate({
                 path: 'user',
                 select: 'email'
             });
@@ -110,7 +111,7 @@ class ProfileService {
             gender: teacher.gender,
             schoolID: teacher.school._id,
             schoolName: teacher.school.schoolName,
-            classes: teacher.classes,
+            // classes: teacher.classes,
             recentIncidents,
             totalClasses: teacher.classes.length,
             totalStudents: teacher.classes.reduce((acc, curr) => acc + (curr.students?.length || 0), 0)

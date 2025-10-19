@@ -7,18 +7,16 @@ const { bucket } = require('../config/firebase'); // If you're uploading files t
 
 // Create a new Super Admin
 const createSuperAdmin = async (superAdminData) => {
-  const { first_email, secound_email, password, ...rest } = superAdminData;
-  // Check if email already exists in User
-  const existingUser = await User.findOne({ email: first_email });
-
+  const { firstEmail, secondEmail, password, ...rest } = superAdminData;
+  const existingUser = await User.findOne({ email: firstEmail });
   if (existingUser) {
     throw new Error('Email already registered.');
   }
+  console.log('Creating super admin with data:', superAdminData);
 
-  // Create User
   const hashedPassword = await bcrypt.hash(password, 10);
   const user = new User({
-    email: first_email,
+    email: firstEmail,
     password: hashedPassword,
     role: 'super-admin',
   });
@@ -28,6 +26,10 @@ const createSuperAdmin = async (superAdminData) => {
   const admin = new SuperAdmin({
     user: savedUser._id,
     ...rest,
+    password: hashedPassword,
+    firstEmail: firstEmail,
+    secondEmail: secondEmail,
+
   });
   return await admin.save();
 };

@@ -1,3 +1,25 @@
+## Release [5.10.11]  
+`update time : 2025-10-17`
+
+### Technical Updates
+  - Fixed super-admin endpoint - to enable creation of super-admin with correct fields
+  - 
+ 
+### Description
+> **Update Users Profiles**  
+> fix the endpoint `GET /api/profile` to return fixed fields for all user roles
+> - [x] super-admin profile
+> - [ ] admin profile
+> - [ ] school-admin profile 
+> - [ ] teacher profile
+> - [x] student profile
+> - [x] parent profile
+
+
+---
+
+
+
 ## Release [5.10.10]    **→ (Current)**
 `update time : 2025-10-10`
 

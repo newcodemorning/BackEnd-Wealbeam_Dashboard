@@ -1,10 +1,13 @@
 const Joi = require('joi');
 
 const teacherSchema = Joi.object({
-    email: Joi.string().email().required().messages({
+    firstEmail: Joi.string().email().required().messages({
         'string.email': 'Please provide a valid email address',
         'string.empty': 'Email is required',
         'any.required': 'Email is required'
+    }),
+    secondEmail: Joi.string().email().optional().allow('', null).messages({
+        'string.email': 'Please provide a valid email address for the second email'
     }),
     password: Joi.string()
         .min(8)
@@ -54,10 +57,13 @@ const teacherSchema = Joi.object({
 });
 
 const updateTeacherSchema = Joi.object({
-    email: Joi.string().email().optional().messages({
+    firstEmail: Joi.string().email().optional().messages({
         'string.email': 'Please provide a valid email address',
         'string.empty': 'Email is required',
         'any.required': 'Email is required'
+    }),
+    secondEmail: Joi.string().email().optional().allow('', null).messages({
+        'string.email': 'Please provide a valid email address for the second email'
     }),
     password: Joi.string()
         .min(8)

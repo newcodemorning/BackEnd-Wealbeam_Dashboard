@@ -8,8 +8,8 @@ const Class = require('../models/class.model');
 
 // Add a new student
 const addTeacher = async (data, file) => {
-  const { email, password, schoolId, ...rest } = data;
-  const existingUser = await User.findOne({ email: email });
+  const { firstEmail, password, schoolId, ...rest } = data;
+  const existingUser = await User.findOne({ email: firstEmail });
   if (existingUser) {
     throw new Error('Email already registered.');
   }
@@ -29,7 +29,7 @@ const addTeacher = async (data, file) => {
   // Create User
   const hashedPassword = await bcrypt.hash(password, 10);
   const user = new User({
-    email: email,
+    email: firstEmail,
     password: hashedPassword,
     role: 'teacher',
   });
@@ -47,6 +47,7 @@ const addTeacher = async (data, file) => {
   const teacher = new Teacher({
     user: savedUser._id,
     photo: photo,
+    firstEmail: firstEmail,
     school: schoolId, // Link teacher to a school
     ...rest
   });
@@ -58,7 +59,7 @@ const addTeacher = async (data, file) => {
   }
 
   return {
-    email,
+    firstEmail: savedUser.email,
     ...response._doc
   }
 };
