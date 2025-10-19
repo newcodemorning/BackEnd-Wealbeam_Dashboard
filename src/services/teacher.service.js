@@ -15,17 +15,21 @@ const addTeacher = async (data, file) => {
   }
   let photo = ''
   if (file) {
-    const fileconten = bucket.file(`uploads/${file.originalname}`);
-    await fileconten.save(file.buffer, {
+    const fileName = uuidv4() + '-' + file.originalname.replace(/\s+/g, '_');
+
+    const fileContent = bucket.file(`uploads/${fileName}`);
+
+    await fileContent.save(file.buffer, {
       metadata: { contentType: file.mimetype },
     });
-    await fileconten.makePublic();
 
-    // Get the public URL of the uploaded file
-    const photoUrl = `https://storage.googleapis.com/${bucket.name}/${fileconten.name}`
+    await fileContent.makePublic();
+
+    const photoUrl = `https://storage.googleapis.com/${bucket.name}/${fileContent.name}`;
 
     photo = photoUrl;
   }
+
   // Create User
   const hashedPassword = await bcrypt.hash(password, 10);
   const user = new User({

@@ -16,7 +16,8 @@ const addParent = async (req, res) => {
     // Handle file upload only if a file is provided
     if (req.file) {
       try {
-        const file = bucket.file(`uploads/${req.file.originalname}`);
+        const fileName = Date.now() + '-' + req.file.originalname.replace(/\s+/g, '_').replace(' ', '_');
+        const file = bucket.file(`uploads/${fileName}`);
         await file.save(req.file.buffer, {
           metadata: { contentType: req.file.mimetype },
         });
