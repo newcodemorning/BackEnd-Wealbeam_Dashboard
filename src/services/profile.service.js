@@ -100,6 +100,7 @@ class ProfileService {
             teacher.photo = imageUrlBase + teacher.photo;
         }
 
+
         return {
             id: teacher._id,
             first_name: teacher.first_name,
@@ -205,6 +206,13 @@ class ProfileService {
                 }
             })
             .sort({ created_at: -1 });
+        
+        
+        const imageUrlBase = process.env.BASE_URL || 'http://localhost:4000';
+        if (parent.profile_image && parent.profile_image.startsWith('/uploads/')) {
+            parent.profile_image = imageUrlBase + parent.profile_image;
+        }
+
 
         return {
 
@@ -218,9 +226,9 @@ class ProfileService {
             second_phone: parent.second_phone,
             gender: parent.gender,
             date_of_birth: parent.date_of_birth,
-            profile_image: parent.profile_image,
+            // profile_image: parent.profile_image,
             first_email: parent.user.email,
-            photo: null,
+            photo: parent.profile_image,
             role: 'parent',
             
 
@@ -283,6 +291,11 @@ class ProfileService {
 
         console.log("✅ Found SuperAdmin profile:", superAdmin);
 
+        const imageUrlBase = process.env.BASE_URL || 'http://localhost:4000';
+        if (superAdmin.photo && superAdmin.photo.startsWith('/uploads/')) {
+            superAdmin.photo = imageUrlBase + superAdmin.photo;
+        }
+
         return {
             id: user._id,
             first_name: superAdmin.firstName,
@@ -290,8 +303,7 @@ class ProfileService {
             photo: superAdmin.photo,
             first_email: superAdmin.firstEmail,
             second_email: superAdmin.secondEmail,
-            first_phone: superAdmin.firstPhone,
-            second_phone: superAdmin.secondPhone,
+            phoneNumber: superAdmin.phoneNumber,
             date_of_birth: superAdmin.dateOfBirth,
             gender: superAdmin.gender,
             role: user.role,
@@ -639,8 +651,8 @@ class ProfileService {
             superAdminUpdates.photo = `/uploads/super-admins/${filename}`;
         }
 
-        if (otherUpdates.firstName) superAdminUpdates.firstName = otherUpdates.firstName;
-        if (otherUpdates.lastName) superAdminUpdates.lastName = otherUpdates.lastName;
+        if (otherUpdates.first_name) superAdminUpdates.firstName = otherUpdates.first_name;
+        if (otherUpdates.last_name) superAdminUpdates.lastName = otherUpdates.last_name;
         if (otherUpdates.secondEmail) superAdminUpdates.secondEmail = otherUpdates.secondEmail;
         if (otherUpdates.phoneNumber) superAdminUpdates.phoneNumber = otherUpdates.phoneNumber;
         if (otherUpdates.dateOfBirth) superAdminUpdates.dateOfBirth = otherUpdates.dateOfBirth;
