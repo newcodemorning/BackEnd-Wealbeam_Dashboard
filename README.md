@@ -3,15 +3,15 @@
 
 ### Technical Updates
   - Fixed super-admin endpoint - to enable creation of super-admin with correct fields
-  - 
- 
+  - enabled parent registration without authentication (parent self-registration)
+
 ### Description
 > **Update Users Profiles**  
 > fix the endpoint `GET /api/profile` to return fixed fields for all user roles
 > - [x] super-admin profile
-> - [ ] admin profile
-> - [ ] school-admin profile 
-> - [ ] teacher profile
+> - [x] admin profile
+> - [x] school-admin profile 
+> - [x] teacher profile
 > - [x] student profile
 > - [x] parent profile
 

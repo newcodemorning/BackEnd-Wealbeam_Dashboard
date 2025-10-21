@@ -37,9 +37,7 @@ exports.updateProfile = async (req, res) => {
     try {
         const { role, roleId } = req.user;
         const updateData = req.body;
-        const file = req.file; // Get uploaded file
-
-
+        const file = req.file; 
 
         let updatedProfile;
         switch (role) {
@@ -47,12 +45,11 @@ exports.updateProfile = async (req, res) => {
                 updatedProfile = await profileService.updateStudentProfile(roleId, updateData, file);
                 break;
             case 'school':
-                res.status(501).json({ message: 'School profile update not implemented yet' });
-                // updatedProfile = await profileService.updateSchoolProfile(roleId, updateData);
+                updatedProfile = await profileService.updateSchoolProfile(roleId, updateData);
                 break;
             case 'teacher':
-                res.status(501).json({ message: 'Teacher profile update not implemented yet' });
-                // updatedProfile = await profileService.updateTeacherProfile(roleId, updateData);
+                // res.status(501).json({ message: 'Teacher profile update not implemented yet' });
+                updatedProfile = await profileService.updateTeacherProfile(roleId, updateData, file);
                 break;
             case 'parent':
                 res.status(501).json({ message: 'Parent profile update not implemented yet' });

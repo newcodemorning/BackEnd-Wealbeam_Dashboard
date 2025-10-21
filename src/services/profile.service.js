@@ -94,7 +94,11 @@ class ProfileService {
 
         const allClasses = await Class.find({ teacher: teacher._id })
             .populate('students', 'first_name last_name photo');
-            
+        
+        const imageUrlBase = process.env.BASE_URL || 'http://localhost:4000';
+        if (teacher.photo && teacher.photo.startsWith('/uploads/')) {
+            teacher.photo = imageUrlBase + teacher.photo;
+        }
 
         return {
             id: teacher._id,
@@ -297,17 +301,12 @@ class ProfileService {
     async updateStudentProfile(studentId, updateData, photoFile) {
         const { first_email, password, ...otherUpdates } = updateData;
 
-        console.log("➡️ Starting updateStudent for ID:", studentId);
-        console.log("📥 updateData received:", updateData);
-        console.log("📷 photoFile received:", photoFile ? photoFile.originalname : 'No file');
-
-        // Get the student with user data
         const originalStudent = await Student.findById(studentId).populate('user');
+
         if (!originalStudent) {
             console.log("❌ Student not found with ID:", studentId);
             throw new Error('Student not found');
         }
-        console.log("✅ Found originalStudent:", originalStudent);
 
         // Handle photo upload
         if (photoFile) {
@@ -391,6 +390,127 @@ class ProfileService {
 
         return result;
     }
+
+    async updateSchoolProfile(schoolId, updateData) {
+        const { schoolName, address, phone, language, first_email, password } = updateData;
+        
+        const originalSchool = await School.findById(schoolId).populate('user');
+
+        if (!originalSchool) {
+            throw new Error('School not found');
+        }
+
+        // Update user
+        if (first_email || password) {
+            const userUpdates = {};
+
+            if (first_email) {
+                const existingUser = await User.findOne({
+                    email: first_email,
+                    _id: { $ne: originalSchool.user._id }
+                });
+                if (existingUser) {
+                    throw new Error('Email already registered');
+                }
+                userUpdates.email = first_email;
+            }
+
+            if (password?.trim()) {
+                userUpdates.password = await bcrypt.hash(password, 10);
+            }
+
+            if (Object.keys(userUpdates).length > 0) {
+                await User.findByIdAndUpdate(originalSchool.user._id, userUpdates);
+            }
+        }
+        
+        const schoolUpdates = {};
+        if (schoolName) schoolUpdates.schoolName = schoolName;
+        if (address) schoolUpdates.address = address;
+        if (phone) schoolUpdates.phone = phone;
+        if (language) schoolUpdates.language = language;
+
+        await School.findByIdAndUpdate(schoolId, schoolUpdates, { new: true });
+        return await this.getSchoolProfile(schoolId);
+    }
+
+
+
+    
+    async updateTeacherProfile(teacherId, updateData,file) {
+        const { first_email, password, ...otherUpdates } = updateData;
+        const originalTeacher = await Teacher.findById(teacherId).populate('user');
+        if (!originalTeacher) {
+            throw new Error('Teacher not found');
+        }
+        if (first_email || password) {
+            const userUpdates = {};
+            if (first_email) {
+                const existingUser = await User.findOne({
+                    email: first_email,
+                    _id: { $ne: originalTeacher.user._id }
+                });
+                if (existingUser) {
+                    throw new Error('Email already registered');
+                }
+                userUpdates.email = first_email;
+            }
+
+            if (password?.trim()) {
+                userUpdates.password = await bcrypt.hash(password, 10);
+            }
+
+            if (Object.keys(userUpdates).length > 0) {
+                await User.findByIdAndUpdate(originalTeacher.user._id, userUpdates);
+            }
+        }
+        
+        const teacherUpdates = {};
+        if (file) {
+            // Handle photo upload
+            const uploadDir = path.join(__dirname, '../../uploads/teachers');
+            if (!fs.existsSync(uploadDir)) {
+                fs.mkdirSync(uploadDir, { recursive: true });
+            }
+            
+            // Generate unique filename
+            const timestamp = Date.now();
+            const ext = path.extname(file.originalname);
+            const filename = `teacher_${teacherId}_${timestamp}${ext}`;
+            const filepath = path.join(uploadDir, filename);
+
+            // Save the file
+            fs.writeFileSync(filepath, file.buffer);
+
+            // Delete old photo if exists
+            if (originalTeacher.photo) {
+                const oldPhotoPath = path.join(__dirname, '../../uploads', originalTeacher.photo.replace('/uploads/', ''));
+                if (fs.existsSync(oldPhotoPath)) {
+                    fs.unlinkSync(oldPhotoPath);
+                }
+            }
+            // Update photo path
+            teacherUpdates.photo = `/uploads/teachers/${filename}`;
+        }
+
+        if (otherUpdates.first_name) teacherUpdates.first_name = otherUpdates.first_name;
+        if (otherUpdates.last_name) teacherUpdates.last_name = otherUpdates.last_name;
+        if (otherUpdates.second_email) teacherUpdates.second_email = otherUpdates.second_email;
+        if (otherUpdates.first_email) teacherUpdates.firstEmail = otherUpdates.first_email;
+        if (otherUpdates.age) teacherUpdates.age = otherUpdates.age;
+        if (otherUpdates.title) teacherUpdates.title = otherUpdates.title;
+        if (otherUpdates.gender) teacherUpdates.gender = otherUpdates.gender;
+        
+        const teacher = await Teacher.findById(teacherId);
+        Object.assign(teacher, teacherUpdates);
+        await teacher.validate(); 
+        await teacher.save();   
+        const result = teacher.toObject();
+
+        return result;
+    }
+
 }
 
 module.exports = new ProfileService();
+
