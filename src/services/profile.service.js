@@ -221,6 +221,7 @@ class ProfileService {
             profile_image: parent.profile_image,
             first_email: parent.user.email,
             photo: null,
+            role: 'parent',
             
 
             // students: parent.students.map(student => ({
@@ -509,6 +510,148 @@ class ProfileService {
 
         return result;
     }
+
+
+    async updateParentProfile(parentId, updateData, file) {
+        const { first_email, password, ...otherUpdates } = updateData;
+        const originalParent = await Parent.findById(parentId).populate('user');
+        if (!originalParent) {
+            throw new Error('Parent not found');
+        }
+        if (first_email || password) {
+            const userUpdates = {};
+            if (first_email) {
+                const existingUser = await User.findOne({
+                    email: first_email,
+                    _id: { $ne: originalParent.user._id }
+                });
+                if (existingUser) {
+                    throw new Error('Email already registered');
+                }
+                userUpdates.email = first_email;
+            }
+
+            if (password?.trim()) {
+                userUpdates.password = await bcrypt.hash(password, 10);
+            }
+
+            if (Object.keys(userUpdates).length > 0) {
+                await User.findByIdAndUpdate(originalParent.user._id, userUpdates);
+            }
+        }
+
+        
+        const parentUpdates = {};
+
+        if (file) {
+            const uploadDir = path.join(__dirname, '../../uploads/parents');
+            if (!fs.existsSync(uploadDir)) {
+                fs.mkdirSync(uploadDir, { recursive: true });
+            }
+            
+            const timestamp = Date.now();
+            const ext = path.extname(file.originalname);
+            const filename = `parent_${parentId}_${timestamp}${ext}`;
+            const filepath = path.join(uploadDir, filename);
+
+            fs.writeFileSync(filepath, file.buffer);
+
+            parentUpdates.profile_image = filepath;
+        }
+
+        if (otherUpdates.first_name) parentUpdates.first_name = otherUpdates.first_name;
+        if (otherUpdates.last_name) parentUpdates.last_name = otherUpdates.last_name;
+        if (otherUpdates.second_email) parentUpdates.second_email = otherUpdates.second_email;
+        if (otherUpdates.first_phone) parentUpdates.first_phone = otherUpdates.first_phone;
+        if (otherUpdates.second_phone) parentUpdates.second_phone = otherUpdates.second_phone;
+        if (otherUpdates.date_of_birth) parentUpdates.date_of_birth = otherUpdates.date_of_birth;
+        if (otherUpdates.gender) parentUpdates.gender = otherUpdates.gender;
+
+        const parent = await Parent.findById(parentId);
+        Object.assign(parent, parentUpdates);
+        await parent.validate();
+        await parent.save();
+        const result = parent.toObject();
+
+        return result;
+    }
+
+
+    async updateSuperAdminProfile(superAdminId, updateData, file) {
+        const { first_email, password, ...otherUpdates } = updateData;
+        
+        const originalSuperAdmin = await SuperAdmin.findOne({ user: superAdminId }).populate('user');
+
+        if (!originalSuperAdmin) {
+            throw new Error('Super Admin not found');
+        }
+
+        // Update user
+        if (first_email || password) {
+            const userUpdates = {};
+
+            if (first_email) {
+                const existingUser = await User.findOne({
+                    email: first_email,
+                    _id: { $ne: originalSuperAdmin.user._id }
+                });
+                if (existingUser) {
+                    throw new Error('Email already registered');
+                }
+                userUpdates.email = first_email;
+            }
+
+            if (password?.trim()) {
+                userUpdates.password = await bcrypt.hash(password, 10);
+            }
+
+            if (Object.keys(userUpdates).length > 0) {
+                await User.findByIdAndUpdate(originalSuperAdmin.user._id, userUpdates);
+            }
+        }
+        
+        const superAdminUpdates = {};
+
+        if (file) {
+            // Handle photo upload
+            const uploadDir = path.join(__dirname, '../../uploads/super-admins');
+            if (!fs.existsSync(uploadDir)) {
+                fs.mkdirSync(uploadDir, { recursive: true });
+            }
+            
+            // Generate unique filename
+            const timestamp = Date.now();
+            const ext = path.extname(file.originalname);
+            const filename = `superadmin_${superAdminId}_${timestamp}${ext}`;
+            const filepath = path.join(uploadDir, filename);
+
+            // Save the file
+            fs.writeFileSync(filepath, file.buffer);
+
+            // Delete old photo if exists
+            if (originalSuperAdmin.photo) {
+                const oldPhotoPath = path.join(__dirname, '../../uploads', originalSuperAdmin.photo.replace('/uploads/', ''));
+                if (fs.existsSync(oldPhotoPath)) {
+                    fs.unlinkSync(oldPhotoPath);
+                }
+            }
+            // Update photo path
+            superAdminUpdates.photo = `/uploads/super-admins/${filename}`;
+        }
+
+        if (otherUpdates.firstName) superAdminUpdates.firstName = otherUpdates.firstName;
+        if (otherUpdates.lastName) superAdminUpdates.lastName = otherUpdates.lastName;
+        if (otherUpdates.secondEmail) superAdminUpdates.secondEmail = otherUpdates.secondEmail;
+        if (otherUpdates.phoneNumber) superAdminUpdates.phoneNumber = otherUpdates.phoneNumber;
+        if (otherUpdates.dateOfBirth) superAdminUpdates.dateOfBirth = otherUpdates.dateOfBirth;
+        if (otherUpdates.gender) superAdminUpdates.gender = otherUpdates.gender;
+        if (otherUpdates.address) superAdminUpdates.address = otherUpdates.address;
+
+        await SuperAdmin.findByIdAndUpdate(originalSuperAdmin._id, superAdminUpdates, { new: true });
+        return await this.getSuperAdminProfile(superAdminId);
+
+    }
+
 
 }
 

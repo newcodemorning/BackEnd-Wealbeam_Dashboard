@@ -52,12 +52,12 @@ exports.updateProfile = async (req, res) => {
                 updatedProfile = await profileService.updateTeacherProfile(roleId, updateData, file);
                 break;
             case 'parent':
-                res.status(501).json({ message: 'Parent profile update not implemented yet' });
-                // updatedProfile = await profileService.updateParentProfile(roleId, updateData);
+                // res.status(501).json({ message: 'Parent profile update not implemented yet' });
+                updatedProfile = await profileService.updateParentProfile(roleId, updateData, file);
                 break;
             case 'super-admin':
-                res.status(501).json({ message: 'Super Admin profile update not implemented yet' });
-                // updatedProfile = await profileService.updateSuperAdminProfile(roleId, updateData);
+                // res.status(501).json({ message: 'Super Admin profile update not implemented yet' });
+                updatedProfile = await profileService.updateSuperAdminProfile(roleId, updateData, file);
                 break;
             default:
                 return res.status(400).json({ message: 'Invalid role' });
