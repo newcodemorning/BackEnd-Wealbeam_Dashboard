@@ -9,7 +9,6 @@ exports.createForm = async (req, res) => {
         // if (error) {
         //     return res.status(400).json({ error: error.details[0].message });
         // }
-
         const form = await questionService.createForm(req.body);
         res.status(201).json(form);
     } catch (error) {
