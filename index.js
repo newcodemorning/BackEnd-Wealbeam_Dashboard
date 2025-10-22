@@ -18,16 +18,14 @@ const parentRouter = require('./src/routes/parent.router')
 const pdfRouter = require('./src/routes/pdf.router');
 const IncidentReportRoutes = require('./src/routes/incident.routes');
 const ProfileRoutes = require('./src/routes/profile.router');
+const appInfo  = require('./src/routes/info.router');
 const { createIndexes } = require('./src/models/indexes');
 
 require('dotenv').config();
-
 const path = require('path');
-
-
 const app = express();
-
 app.use(cors());
+
 mongoose
   .connect(process.env.MONGO_DATABASE_URL, {
     useNewUrlParser: true,
@@ -35,11 +33,9 @@ mongoose
       serverSelectionTimeoutMS: 30000, 
   socketTimeoutMS: 45000,
   maxPoolSize: 10
-
-  })
+ })
   .then(async () => {
-    console.log("DB Connected");
-    // Create indexes after successful connection
+    console.log("\x1b[32mDB Connected successfully !\x1b[0m");
     await createIndexes();
   })
   .catch((err) => {
@@ -67,9 +63,7 @@ app.use((err, req, res, next) => {
 });
 
 
-app.get("/", (req, res) => res.send("Hello, welcome to the weallbeamtogether API! v5.7.10.2 :)"));
-
-// Apply authentication and authorization middleware
+app.get("/", appInfo);
 
 app.use("/auth", authRoutes);
 app.use("/faqs", faqsRoutes);
@@ -91,11 +85,11 @@ app.use("/profile", ProfileRoutes);
 
 // Base route
 app.get('/', (req, res) => {
-  res.send('Firebase Express App is running');
+  res.status(500).json({ error: 'Something went wrong!' });
 });
 
 // Start server
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`\x1b[32mServer is running on port ${PORT}\x1b[0m`);
 });

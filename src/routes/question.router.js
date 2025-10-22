@@ -22,9 +22,6 @@ router.get('/daily', authenticateUser, authorizeRole(['super-admin', 'school', '
 // Get form by subject
 router.get('/:subject', authorizeRole(['super-admin', 'school', 'teacher', 'student']), questionController.getForm);
 
-
-
-
 // Update form by subject
 router.put('/:subject', authorizeRole(['super-admin', 'school']), validate(updateFormSchema), questionController.updateForm);
 
@@ -39,10 +36,5 @@ router.put('/id/:id', authorizeRole(['super-admin', 'school']), validate(updateF
 
 // Delete form by ID
 router.delete('/id/:id', authorizeRole(['super-admin', 'school']), questionController.deleteFormById);
-
-
-
-
-
 
 module.exports = router;
