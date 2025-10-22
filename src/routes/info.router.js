@@ -11,4 +11,9 @@ router.get('/info', (req, res) => {
 }
 );
 
+router.get('/', (req, res) => {
+  res.status(500).json({ error: 'Something went wrong!' });
+}
+);
+
 module.exports = router;

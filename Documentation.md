@@ -4,3 +4,10 @@
 > - the endpoint to get the daily form is: `GET /questions/daily` 
 > - the endpoint to submit the daily form is: `POST /questions` => with body ```{ formName: "daily", ...otherFields}``` 
 > just like any other form submission
+
+
+
+
+### TODO:
+in front end add the lang in baseURL for all requests
+- e.g., `http://localhost:4000/en/students/login`  or `http://localhost:4000/ar/students/login`

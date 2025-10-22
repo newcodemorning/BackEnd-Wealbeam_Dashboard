@@ -2,23 +2,24 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require("mongoose");
 const bodyParser = require('body-parser');
-const authRoutes = require('./src/routes/auth.router');
+const pdfRouter = require('./src/routes/pdf.router');
+const appInfo  = require('./src/routes/info.router');
 const faqsRoutes = require('./src/routes/faq.router');
+const authRoutes = require('./src/routes/auth.router');
+const classRouter = require('./src/routes/class.router')
 const forumRoutes = require('./src/routes/forum.router');
-const contactsRouter = require('./src/routes/contacts.router');
+const schoolRouter = require('./src/routes/school.router')
+const parentRouter = require('./src/routes/parent.router')
 const ticketRouter = require('./src/routes/ticket.router');
 const studentRouter = require('./src/routes/student.router');
+const teacherRouter = require('./src/routes/teacher.router')
+const ProfileRoutes = require('./src/routes/profile.router');
+const contactsRouter = require('./src/routes/contacts.router');
 const ResponseRouter = require('./src/routes/response.router');
 const QuestionRouter = require('./src/routes/question.router');;
 const superAdminRouter = require('./src/routes/super-admin.router')
-const teacherRouter = require('./src/routes/teacher.router')
-const schoolRouter = require('./src/routes/school.router')
-const classRouter = require('./src/routes/class.router')
-const parentRouter = require('./src/routes/parent.router')
-const pdfRouter = require('./src/routes/pdf.router');
 const IncidentReportRoutes = require('./src/routes/incident.routes');
-const ProfileRoutes = require('./src/routes/profile.router');
-const appInfo  = require('./src/routes/info.router');
+const translateMiddleware = require('./src/common/middleware/translateMiddleware');
 const { createIndexes } = require('./src/models/indexes');
 
 require('dotenv').config();
@@ -64,7 +65,6 @@ app.use((err, req, res, next) => {
 
 
 app.get("/", appInfo);
-
 app.use("/auth", authRoutes);
 app.use("/faqs", faqsRoutes);
 app.use("/forum", forumRoutes);
@@ -82,11 +82,31 @@ app.use("/pdf", pdfRouter);
 app.use("/incidents", IncidentReportRoutes);
 app.use("/profile", ProfileRoutes);
 
+// ************** Language-based routing ************** //
 
-// Base route
-app.get('/', (req, res) => {
-  res.status(500).json({ error: 'Something went wrong!' });
-});
+const langRouter = express.Router();
+app.use('/:lang', translateMiddleware, langRouter);
+
+langRouter.use("/auth", authRoutes);
+langRouter.use("/faqs", faqsRoutes);
+langRouter.use("/forum", forumRoutes);
+langRouter.use("/contacts", contactsRouter);
+langRouter.use("/ticket", ticketRouter);
+langRouter.use("/questions", QuestionRouter);
+langRouter.use("/responses", ResponseRouter);
+langRouter.use("/students", studentRouter);
+langRouter.use("/super-admin", superAdminRouter);
+langRouter.use("/teachers", teacherRouter);
+langRouter.use("/school", schoolRouter);
+langRouter.use("/classes", classRouter);
+langRouter.use("/parent", parentRouter);
+langRouter.use("/pdf", pdfRouter);
+langRouter.use("/incidents", IncidentReportRoutes);
+langRouter.use("/profile", ProfileRoutes);
+
+
+
+
 
 // Start server
 const PORT = process.env.PORT || 4000;

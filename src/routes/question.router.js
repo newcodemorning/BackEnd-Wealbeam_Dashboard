@@ -8,8 +8,6 @@ const router = express.Router();
 
 router.use(authenticateUser);
 
-
-
 // Create a new form
 router.post('/', authorizeRole(['super-admin', 'school']),  questionController.createForm);
 

@@ -14,13 +14,9 @@ router.post('/submit', authorizeRole(['student']), validate(responseSchema), res
 // Get all responses for school (school can see their responses) by date range
 router.get('/:id', authorizeRole(['super-admin', 'school', 'teacher', 'parent']), responseController.getSchoolResponsesStatistics);
 
-
-
 // Get student status (school can see their students' status, teacher can see their students' status, parent can see their children's status)
 // TODO: enhance and fix errors
 router.get('/student-status/:studentId', authorizeRole(['super-admin', 'school', 'teacher', 'parent']), responseController.getStudentStatus);
-
-
 
 // // Get all responses for a subject (school can see their responses, teacher can see their responses)
 // router.get('/subject/:subject', authorizeRole(['super-admin', 'school', 'teacher']), responseController.getSubjectResponses);
