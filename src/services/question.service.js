@@ -46,14 +46,39 @@ class QuestionService {
         return Form.findOneAndUpdate({ subject }, updateData, { new: true });
     }
 
-    async getFormBySubject(subject) {
-        return Form.findOne({ subject }).lean();
+
+
+    async getFormBySubject(subject, lang) {
+        console.log("Requested language:", lang);
+        const form = await Form.findOne({ subject }).lean();
+        if (form) {
+            form.questions = form.questions.map(q => ({
+                ...q,
+                text: q.text[lang] || q.text,
+                options: q.options ? q.options.map(opt => ({
+                    ...opt,
+                    text: opt.text[lang] || opt.text
+                })) : []
+            }));    
+        }
+        return form;
     }
 
-    async getDailyForm() {
+    async getDailyForm(lang) {
         
 
-        return Form.findOne({ subject: 'daily' }).lean();
+        const form = await Form.findOne({ subject: 'daily' }).lean();
+        if (form) {
+            form.questions = form.questions.map(q => ({
+                ...q,
+                text: q.text[lang] || q.text,
+                options: q.options ? q.options.map(opt => ({
+                    ...opt,
+                    text: opt.text[lang] || opt.text
+                })) : []
+            }));
+        }
+        return form;
     }
 
     async getAllForms() {
@@ -64,8 +89,22 @@ class QuestionService {
         return Form.findOneAndDelete({ subject });
     }
 
-    async getFormById(id) {
-        return Form.findById(id).lean();
+    async getFormById(id ,lang) {
+
+        const form = await Form.findById(id).lean();;
+        if (form) {
+            form.questions = form.questions.map(q => ({
+                ...q,
+                text: q.text[lang] || q.text,
+                options: q.options ? q.options.map(opt => ({
+                    ...opt,
+                    text: opt.text[lang] || opt.text
+                })) : []
+            }));
+        }
+        return form;
+
+
     }
 
     async updateFormById(id, updateData) {

@@ -19,8 +19,9 @@ exports.createForm = async (req, res) => {
 exports.getForm = async (req, res) => {
     try {
         const { subject } = req.params;
+        const lang = req.lang || 'en';
 
-        const form = await questionService.getFormBySubject(subject);
+        const form = await questionService.getFormBySubject(subject, lang);
 
         if (!form) {
             return res.status(404).json({ error: 'Form not found' });
@@ -36,13 +37,12 @@ exports.getForm = async (req, res) => {
 
 exports.getDailyForm = async (req, res) => {
     try {
-
-        const studentId = req.user.roleId; 
+        const lang = req.lang || 'en';
+        const studentId = req.user.roleId;
         const lastSubmitted = await Response.findOne({ student: studentId }).sort({ timestamp: -1 });
         if (lastSubmitted) {
             const lastDate = new Date(lastSubmitted.timestamp);
             const today = new Date();
-
             if (lastDate.toDateString() === today.toDateString()) {
                 return res.status(208).json(
                     {
@@ -54,18 +54,10 @@ exports.getDailyForm = async (req, res) => {
                 );
             }
         }
-
-        
-
-
-
-        const form = await questionService.getDailyForm();
-
-
+        const form = await questionService.getDailyForm(lang);
         if (!form) {
             return res.status(404).json({ error: 'Daily form not found' });
         }
-
         res.json(form);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -118,7 +110,9 @@ exports.deleteForm = async (req, res) => {
 exports.getFormById = async (req, res) => {
     try {
         const { id } = req.params;
-        const form = await questionService.getFormById(id);
+        const lang = req.lang || 'en';
+
+        const form = await questionService.getFormById(id, lang);
         if (!form) {
             return res.status(404).json({ error: 'Form not found' });
         }

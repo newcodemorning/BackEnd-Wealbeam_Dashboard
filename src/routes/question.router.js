@@ -8,25 +8,25 @@ const router = express.Router();
 
 router.use(authenticateUser);
 
-// Create a new form
+// Create a new form (done add lang here)
 router.post('/', authorizeRole(['super-admin', 'school']),  questionController.createForm);
 
 // Get all forms
 router.get('/', authorizeRole(['super-admin', 'school', 'teacher', 'student']), questionController.getAllForms);
 
-// Get daily form
+// Get daily form (done add lang here)
 router.get('/daily', authenticateUser, authorizeRole(['super-admin', 'school', 'teacher', 'student']), questionController.getDailyForm);
 
-// Get form by subject
+// Get form by subject (done add lang here)
 router.get('/:subject', authorizeRole(['super-admin', 'school', 'teacher', 'student']), questionController.getForm);
 
-// Update form by subject
+// Update form by subject 
 router.put('/:subject', authorizeRole(['super-admin', 'school']), validate(updateFormSchema), questionController.updateForm);
 
 // Delete form by subject
 router.delete('/:subject', authorizeRole(['super-admin', 'school']), questionController.deleteForm);
 
-// Get form by ID
+// Get form by ID 
 router.get('/id/:id', authorizeRole(['super-admin', 'school', 'teacher', 'student']), questionController.getFormById);
 
 // Update form by ID

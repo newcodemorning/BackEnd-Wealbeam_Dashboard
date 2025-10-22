@@ -1,7 +1,10 @@
 const mongoose = require('mongoose');
 
 const optionSchema = new mongoose.Schema({
-    text: { type: String, required: true },
+    text: {
+        ar: { type: String, required: true },
+        en: { type: String, required: true },
+    },
     name: { type: String, default: ""},
     isDanger: { 
         type: Boolean,
@@ -10,7 +13,10 @@ const optionSchema = new mongoose.Schema({
 });
 
 const questionSchema = new mongoose.Schema({
-    text: { type: String, required: true },
+    text: { 
+        ar: { type: String, required: true },
+        en: { type: String, required: true },
+    },
     type: { 
         type: String, 
         required: true,
