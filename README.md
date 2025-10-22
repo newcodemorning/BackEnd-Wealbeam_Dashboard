@@ -1,11 +1,25 @@
-## Release [5.10.11]  
+### Release [5.10.6]  
+`update time : 2025-10-21`
+
+#### Technical Updates
+  - enhance and fix error in update profile endpoint for all user roles
+  - handle profile picture upload and update correctly in user profile update endpoint to rturn the correct URL after updating the profile picture
+
+#### Description
+> no changes in functionality
+
+---
+
+
+
+### Release [5.10.5]  
 `update time : 2025-10-17`
 
-### Technical Updates
+#### Technical Updates
   - Fixed super-admin endpoint - to enable creation of super-admin with correct fields
   - enabled parent registration without authentication (parent self-registration)
 
-### Description
+#### Description
 > **Update Users Profiles**  
 > fix the endpoint `GET /api/profile` to return fixed fields for all user roles
 > - [x] super-admin profile
@@ -20,16 +34,16 @@
 
 
 
-## Release [5.10.10]    **→ (Current)**
+### Release [5.10.4]    **→ (Current)**
 `update time : 2025-10-10`
 
-### Changed
+#### Changed
   - Added endpoint to retrieve the daily form
   - Added service method to fetch the daily form from the database
   - Added endpoint to retrieve school responses statistics by date range
   - Added service method to aggregate and return response statistics for a school
 
-### Description
+#### Description
 > **Daily Form Functionality:**  
 > in this update, we have added a new feature to get the daily status form students need to fill out every day
 > and this will help teachers and schools to monitor the daily mood their students
@@ -39,17 +53,17 @@
 
 ---
 
-## Release [5.10.8]   
+### Release [5.10.3]   
 `update time : 2025-10-09`
 
-### Changed
+#### Changed
   - return first_email field to the student profile response 
   - Updated Mongoose population to include the `user` field for retrieving the email
   - Enhanced `ecosystem.config.js` to include shared directories for `uploads` and `logs` to ensure persistent storage across deployments
   - Added validation to ensure that the `subject` field does not contain spaces
   - Added endpoints for SubTeachers to retrieve class lists and student information
 
-### Description
+#### Description
 > **SubTeacher Functionality:**  
 > enable to add more teachers to a class and allow them to access student information
 > for each class initially created by the main teacher
@@ -58,12 +72,12 @@
 
 ---
 
-## Release [5.10.7] 
+### Release [5.10.2] 
 `update time : 2025-10-07`
-### Changed
+#### Changed
   - Added environment configuration for production deployment
 
-### Description
+#### Description
 > **Application Name:** `Production-Backend`  
 > **Deployment:** Managed with `pm2` for smooth production operation  
 > **Port:** `4000`
@@ -74,15 +88,15 @@
 
 ---
 
-## Release [5.10.5] 
+### Release [5.10.1] 
 `update time : 2025-10-06`
-### Changed
+#### Changed
   - enabled teachers to add multiple teachers to a class
   - enabled sub-teachers to view class students and their information
 
 
 
-### Description
+#### Description
 > **Sub-Teacher Functionality:**
 > This update introduces the ability for sub-teachers to access and manage their assigned classes more effectively. Sub-teachers can now view class lists, student information, and contribute to the teaching process without needing full teacher permissions.
 
