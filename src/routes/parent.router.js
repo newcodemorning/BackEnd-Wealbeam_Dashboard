@@ -8,13 +8,13 @@ const multer = require('multer');
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.use(authenticateUser);
-
-// Add a parent (school can add parents, teacher can add parents)
-router.post('/', authorizeRole(['super-admin', 'school', 'teacher']), upload.single('photo'), parentController.addParent);
 
 // parent Registration
 router.post('/register', upload.single('photo'), parentController.addParent);
+
+router.use(authenticateUser);
+// Add a parent (school can add parents, teacher can add parents)
+router.post('/', authorizeRole(['super-admin', 'school', 'teacher']), upload.single('photo'), parentController.addParent);
 
 // Get all parents (school can see their parents, teacher can see their parents)
 router.get('/', authorizeRole(['super-admin', 'school', 'teacher']), parentController.getParents);
