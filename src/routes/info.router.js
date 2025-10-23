@@ -12,7 +12,7 @@ router.get('/info', (req, res) => {
 );
 
 router.get('/', (req, res) => {
-  res.status(500).json({ error: 'Something went wrong!' });
+  res.status(500).json({ error: 'Something went wrong! -> v5.10.23' });
 }
 );
 
