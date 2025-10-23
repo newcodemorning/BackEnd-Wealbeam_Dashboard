@@ -9,5 +9,10 @@
 
 
 ### TODO:
-in front end add the lang in baseURL for all requests
-- e.g., `http://localhost:4000/en/students/login`  or `http://localhost:4000/ar/students/login`
+- in front end add the lang in baseURL for all requests
+e.g., `http://localhost:4000/en/students/login`  or `http://localhost:4000/ar/students/login`
+
+- in backend handle the upload image => to be that .... ?!
+- handle the return value (middleware) to include alt image in case it is null ()
+- handle the case of image if it stored as url or path
+- 

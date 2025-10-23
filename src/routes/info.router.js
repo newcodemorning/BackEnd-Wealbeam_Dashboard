@@ -7,7 +7,7 @@ const path = require('path');
 
 
 router.get('/info', (req, res) => {
-  res.send("Hello, welcome to the weallbeamtogether API! v5.10.22)");
+  res.send("Hello, welcome to the weallbeamtogether API! v5.10.23)");
 }
 );
 

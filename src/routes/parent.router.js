@@ -13,7 +13,6 @@ router.use(authenticateUser);
 // Add a parent (school can add parents, teacher can add parents)
 router.post('/', authorizeRole(['super-admin', 'school', 'teacher']), upload.single('photo'), parentController.addParent);
 
-
 // parent Registration
 router.post('/register', upload.single('photo'), parentController.addParent);
 

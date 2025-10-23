@@ -47,7 +47,8 @@ class ProfileService {
             teachers: school.teachers,
             classes: school.classes,
             totalTeachers: school.teachers.length,
-            totalClasses: school.classes.length
+            totalClasses: school.classes.length,
+            role: "school"
         };
     }
 
@@ -119,7 +120,9 @@ class ProfileService {
             // classes: teacher.classes,
             recentIncidents,
             totalClasses: teacher.classes.length,
-            totalStudents: teacher.classes.reduce((acc, curr) => acc + (curr.students?.length || 0), 0)
+            totalStudents: teacher.classes.reduce((acc, curr) => acc + (curr.students?.length || 0), 0),
+            role: 'teacher',
+            
         };
     }
 
@@ -169,7 +172,8 @@ class ProfileService {
             incidents,
             totalIncidents: incidents.length,
             first_email: student.user?.email,
-            schoolID: student.class.school
+            schoolID: student.class.school,
+            role: 'student',
         };
     }
 
@@ -308,6 +312,7 @@ class ProfileService {
             gender: superAdmin.gender,
             role: user.role,
             address: superAdmin.address,
+            
         };
     }
 
