@@ -13,7 +13,8 @@ const answerSchema = Joi.object({
 const responseSchema = Joi.object({
     form: Joi.string().required(),
     answers: Joi.array().items(answerSchema).min(1).required(),
-    timestamp: Joi.date().iso()
+    timestamp: Joi.date().iso(),
+    student: Joi.string()
 });
 
 exports.validateFormResponse = async (req, res, next) => {

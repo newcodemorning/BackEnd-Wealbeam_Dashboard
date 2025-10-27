@@ -19,6 +19,7 @@ const upload = multer({
 router.use(authenticateUser);
 
 // Add a new teacher (only school can add teachers to their school)
+
 // TODO: add subTeachers field to allow multiple teachers for a class
 router.post('/', authorizeRole(['super-admin', 'school']), upload.single('photo'), validate(teacherSchema), teacherController.addTeacher);
 
