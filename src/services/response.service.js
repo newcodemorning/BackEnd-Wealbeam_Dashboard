@@ -104,10 +104,12 @@ class ResponseService {
                 return normalizedAnswer === normalizedDanger ? 'red' : 'green';
             case 'dropdown':
             case 'radiobutton':
-                const selectedOption = question.options.find(opt =>
-                    opt?.text?.toLowerCase() === answer?.toLowerCase() ||
-                    opt?.name?.toLowerCase() === answer?.toLowerCase()
-                );
+                const selectedOption = question.options.find(opt => {
+                    const optText = opt?.text ? String(opt.text).toLowerCase() : '';
+                    const optName = opt?.name ? String(opt.name).toLowerCase() : '';
+                    const answerLower = answer ? String(answer).toLowerCase() : '';
+                    return optText === answerLower || optName === answerLower;
+                });
                 return selectedOption?.isDanger ? 'red' : 'green';
             default:
                 return 'green';
@@ -193,7 +195,7 @@ class ResponseService {
         const students = await Student.find({ class: { $in: classIds } }).select('_id');
         const studentIds = students.map(s => s._id);
 
-        if(formDay > toDay) {
+        if (formDay > toDay) {
             throw new Error('Invalid date range: "from" date must be earlier than "to" date');
         }
 
@@ -209,31 +211,31 @@ class ResponseService {
         const prevEnd = new Date(start);
 
         async function fetchResponses(rangeStart, rangeEnd) {
-        // 1️⃣ Get the form that has subject = 'daily'
-        const form = await Form.findOne({ subject: 'daily' });
+            // 1️⃣ Get the form that has subject = 'daily'
+            const form = await Form.findOne({ subject: 'daily' });
 
-        if (!form) {
-            console.log('Form with subject "daily" not found');
-            return [];
+            if (!form) {
+                console.log('Form with subject "daily" not found');
+                return [];
+            }
+
+            // 2️⃣ Extract all question IDs from that form
+            const allQuestionIDs = form.questions.map(q => q._id);
+
+            // 3️⃣ Fetch all responses in the date range that include these questions
+            const responses = await Response.find({
+                student: { $in: studentIds },
+                'answers.question.id': { $in: allQuestionIDs },
+                timestamp: { $gte: rangeStart, $lte: rangeEnd }
+            })
+                .populate('student', 'name')
+                .populate('form', 'subject');
+
+            console.log('responses:', responses);
+
+            return responses;
         }
 
-        // 2️⃣ Extract all question IDs from that form
-        const allQuestionIDs = form.questions.map(q => q._id);
-
-        // 3️⃣ Fetch all responses in the date range that include these questions
-        const responses = await Response.find({
-            student: { $in: studentIds },
-            'answers.question.id': { $in: allQuestionIDs },
-            timestamp: { $gte: rangeStart, $lte: rangeEnd }
-        })
-            .populate('student', 'name')
-            .populate('form', 'subject');
-
-        console.log('responses:', responses);
-
-        return responses;
-        }
- 
 
 
         const [currentResponses, previousResponses] = await Promise.all([
