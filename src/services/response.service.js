@@ -105,8 +105,8 @@ class ResponseService {
             case 'dropdown':
             case 'radiobutton':
                 const selectedOption = question.options.find(opt =>
-                    opt.text.toLowerCase() === answer.toLowerCase() ||
-                    opt.name.toLowerCase() === answer.toLowerCase()
+                    opt?.text?.toLowerCase() === answer?.toLowerCase() ||
+                    opt?.name?.toLowerCase() === answer?.toLowerCase()
                 );
                 return selectedOption?.isDanger ? 'red' : 'green';
             default:
