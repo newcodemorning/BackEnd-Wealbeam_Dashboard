@@ -9,7 +9,7 @@ const router = express.Router();
 router.use(authenticateUser);
 
 // Create a new form (done add lang here)
-router.post('/', authorizeRole(['super-admin', 'school']),  questionController.createForm);
+router.post('/', authorizeRole(['super-admin', 'school']), validate(createFormSchema), questionController.createForm);
 
 // Get all forms
 router.get('/', authorizeRole(['super-admin', 'school', 'teacher', 'student']), questionController.getAllForms);

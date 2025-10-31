@@ -5,10 +5,10 @@ const Response = require('../models/response.model');
 
 exports.createForm = async (req, res) => {
     try {
-        // const { error } = createFormSchema.validate(req.body);
-        // if (error) {
-        //     return res.status(400).json({ error: error.details[0].message });
-        // }
+        const { error } = createFormSchema.validate(req.body);
+        if (error) {
+            return res.status(400).json({ error: error.details[0].message });
+        }
         const form = await questionService.createForm(req.body);
         res.status(201).json(form);
     } catch (error) {

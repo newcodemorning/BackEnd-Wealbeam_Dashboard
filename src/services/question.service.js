@@ -19,7 +19,7 @@ class QuestionService {
 
         const orders = formData.questions.map(q => q.order);
         const expectedOrders = Array.from({ length: orders.length }, (_, i) => i + 1);
-        
+
         if (JSON.stringify(orders) !== JSON.stringify(expectedOrders)) {
             throw new Error('Question orders are not sequential');
         }
@@ -37,7 +37,7 @@ class QuestionService {
             // Validate question orders are sequential
             const orders = updateData.questions.map(q => q.order);
             const expectedOrders = Array.from({ length: orders.length }, (_, i) => i + 1);
-            
+
             if (JSON.stringify(orders) !== JSON.stringify(expectedOrders)) {
                 throw new Error('Question orders are not sequential');
             }
@@ -48,37 +48,37 @@ class QuestionService {
 
 
 
-    async getFormBySubject(subject, lang) {
-        console.log("Requested language:", lang);
+    async getFormBySubject(subject, lang = 'en') {
         const form = await Form.findOne({ subject }).lean();
         if (form) {
-            form.questions = form.questions.map(q => ({
-                ...q,
-                text: q.text[lang] || q.text,
-                options: q.options ? q.options.map(opt => ({
-                    ...opt,
-                    text: opt.text[lang] || opt.text
-                })) : []
-            }));    
+            // Transform form to return language-specific text
+            const transformedForm = {
+                _id: form._id,
+                subject: form.subject,
+                questions: form.questions.map(q => ({
+                    _id: q._id,
+                    text: q.text[lang] || q.text.en,
+                    type: q.type,
+                    order: q.order,
+                    dangerAnswer: q.dangerAnswer,
+                    options: q.options?.map(opt => ({
+                        _id: opt._id,
+                        text: opt.text[lang] || opt.text.en,
+                        name: opt.name[lang] || opt.name.en || '',
+                        isDanger: opt.isDanger
+                    }))
+                })),
+                createdAt: form.createdAt,
+                updatedAt: form.updatedAt
+            };
+
+            return transformedForm;
         }
         return form;
     }
 
-    async getDailyForm(lang) {
-        
-
-        const form = await Form.findOne({ subject: 'daily' }).lean();
-        if (form) {
-            form.questions = form.questions.map(q => ({
-                ...q,
-                text: q.text[lang] || q.text,
-                options: q.options ? q.options.map(opt => ({
-                    ...opt,
-                    text: opt.text[lang] || opt.text
-                })) : []
-            }));
-        }
-        return form;
+    async getDailyForm(lang = 'en') {
+        return await this.getFormBySubject('daily', lang);
     }
 
     async getAllForms() {
@@ -89,18 +89,32 @@ class QuestionService {
         return Form.findOneAndDelete({ subject });
     }
 
-    async getFormById(id ,lang) {
+    async getFormById(id, lang = 'en') {
 
         const form = await Form.findById(id).lean();;
         if (form) {
-            form.questions = form.questions.map(q => ({
-                ...q,
-                text: q.text[lang] || q.text,
-                options: q.options ? q.options.map(opt => ({
-                    ...opt,
-                    text: opt.text[lang] || opt.text
-                })) : []
-            }));
+            // Transform form to return language-specific text
+            const transformedForm = {
+                _id: form._id,
+                subject: form.subject,
+                questions: form.questions.map(q => ({
+                    _id: q._id,
+                    text: q.text[lang] || q.text.en,
+                    type: q.type,
+                    order: q.order,
+                    dangerAnswer: q.dangerAnswer,
+                    options: q.options?.map(opt => ({
+                        _id: opt._id,
+                        text: opt.text[lang] || opt.text.en,
+                        name: opt.name[lang] || opt.name.en || '',
+                        isDanger: opt.isDanger
+                    }))
+                })),
+                createdAt: form.createdAt,
+                updatedAt: form.updatedAt
+            };
+
+            return transformedForm;
         }
         return form;
 

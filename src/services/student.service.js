@@ -166,7 +166,7 @@ const getStudents = async (req) => {
   }
 
   // If user is a student, only get their own data
-  if (req.user.role === 'student') {
+  if (req.user.role === ' ') {
     const student = await Student.findOne({ user: req.user.id });
     if (!student) {
       throw new Error('Student not found');

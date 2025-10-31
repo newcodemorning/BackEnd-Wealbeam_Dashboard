@@ -5,34 +5,37 @@ const optionSchema = new mongoose.Schema({
         ar: { type: String, required: true },
         en: { type: String, required: true },
     },
-    name: { type: String, default: ""},
-    isDanger: { 
+    name: {
+        ar: { type: String, default: "" },
+        en: { type: String, default: "" }
+    },
+    isDanger: {
         type: Boolean,
         default: false
     }
 });
 
 const questionSchema = new mongoose.Schema({
-    text: { 
+    text: {
         ar: { type: String, required: true },
         en: { type: String, required: true },
     },
-    type: { 
-        type: String, 
+    type: {
+        type: String,
         required: true,
         enum: ['slider', 'yesno', 'dropdown', 'radiobutton']
     },
     order: { type: Number, required: true },
-    dangerAnswer: { 
+    dangerAnswer: {
         type: String,
-        required: function() {
+        required: function () {
             return this.type === 'yesno';
         }
     },
     options: {
         type: [optionSchema],
         validate: {
-            validator: function(v) {
+            validator: function (v) {
                 if (this.type === 'dropdown' || this.type === 'radiobutton') {
                     return v.length >= 2;
                 }

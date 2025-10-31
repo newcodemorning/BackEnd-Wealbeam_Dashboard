@@ -1,13 +1,22 @@
 const Joi = require('joi');
 
 const optionSchema = Joi.object({
-    text: Joi.string().required(),
-    name: Joi.string().optional(),
+    text: Joi.object({
+        ar: Joi.string().required(),
+        en: Joi.string().required()
+    }).required(),
+    name: Joi.object({
+        ar: Joi.string().optional().allow(''),
+        en: Joi.string().optional().allow('')
+    }).optional(),
     isDanger: Joi.boolean().optional()
 });
 
 const questionSchema = Joi.object({
-    text: Joi.string().required(),
+    text: Joi.object({
+        ar: Joi.string().required(),
+        en: Joi.string().required()
+    }).required(),
     type: Joi.string().valid('yesno', 'dropdown', 'slider', 'radiobutton').required(),
     order: Joi.number().integer().min(1).required(),
     dangerAnswer: Joi.when('type', {
