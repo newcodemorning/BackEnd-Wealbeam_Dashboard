@@ -99,14 +99,14 @@ class QuestionService {
                 subject: form.subject,
                 questions: form.questions.map(q => ({
                     _id: q._id,
-                    text: q.text[lang] || q.text.en,
+                    text: q.text,
                     type: q.type,
                     order: q.order,
                     dangerAnswer: q.dangerAnswer,
                     options: q.options?.map(opt => ({
                         _id: opt._id,
-                        text: opt.text[lang] || opt.text.en,
-                        name: opt.name[lang] || opt.name.en || '',
+                        text: opt.text,
+                        name: opt.name,
                         isDanger: opt.isDanger
                     }))
                 })),
