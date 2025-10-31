@@ -176,7 +176,7 @@ const getStudents = async (req) => {
 
   const students = await Student.find(query)
     .populate('user', 'email')
-    // .populate('class')
+    .populate('class', "ClassName school")
     .populate('parent');
 
   return students.map(student => {
