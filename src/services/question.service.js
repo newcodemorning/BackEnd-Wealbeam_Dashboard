@@ -46,7 +46,17 @@ class QuestionService {
         return Form.findOneAndUpdate({ subject }, updateData, { new: true });
     }
 
-
+    _localize(field, lang = 'en') {
+        // Handles: undefined, string, or object with language keys
+        if (field === undefined || field === null) return '';
+        if (typeof field === 'string') return field;
+        // field is an object like { en: '...', ar: '...' }
+        if (field[lang]) return field[lang];
+        if (field.en) return field.en;
+        // fallback to first non-empty value, or empty string
+        const first = Object.values(field).find(v => v !== undefined && v !== null && v !== '');
+        return first || '';
+    }
 
     async getFormBySubject(subject, lang = 'en') {
         const form = await Form.findOne({ subject }).lean();
@@ -57,16 +67,16 @@ class QuestionService {
                 subject: form.subject,
                 questions: form.questions.map(q => ({
                     _id: q._id,
-                    text: q.text[lang] || q.text.en,
+                    text: this._localize(q.text, lang),
                     type: q.type,
                     order: q.order,
                     dangerAnswer: q.dangerAnswer,
-                    options: q.options?.map(opt => ({
+                    options: q.options ? q.options.map(opt => ({
                         _id: opt._id,
-                        text: opt.text[lang] || opt.text.en,
-                        name: opt.name[lang] || opt.name.en || '',
+                        text: this._localize(opt.text, lang),
+                        name: this._localize(opt.name, lang),
                         isDanger: opt.isDanger
-                    }))
+                    })) : []
                 })),
                 createdAt: form.createdAt,
                 updatedAt: form.updatedAt
@@ -99,16 +109,16 @@ class QuestionService {
                 subject: form.subject,
                 questions: form.questions.map(q => ({
                     _id: q._id,
-                    text: q.text,
+                    text: this._localize(q.text, lang),
                     type: q.type,
                     order: q.order,
                     dangerAnswer: q.dangerAnswer,
-                    options: q.options?.map(opt => ({
+                    options: q.options ? q.options.map(opt => ({
                         _id: opt._id,
-                        text: opt.text,
-                        name: opt.name,
+                        text: this._localize(opt.text, lang),
+                        name: this._localize(opt.name, lang),
                         isDanger: opt.isDanger
-                    }))
+                    })) : []
                 })),
                 createdAt: form.createdAt,
                 updatedAt: form.updatedAt
