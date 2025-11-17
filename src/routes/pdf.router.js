@@ -8,12 +8,12 @@ const path = require('path');
 // Multer configuration using memory storage
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB limit
   fileFilter: (req, file, cb) => {
     if (path.extname(file.originalname).toLowerCase() === '.pdf') {
       cb(null, true);
     } else {
-      cb(new Error('Only PDF files are allowed!'), false);
+      cb(new Error('Only PDF   files are allowed!'), false);
     }
   }
 }).single('pdf');
