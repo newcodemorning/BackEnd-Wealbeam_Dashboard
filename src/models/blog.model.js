@@ -1,5 +1,5 @@
-
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
+const { Schema } = require("mongoose");
 
 const LocalizedString = {
     en: { type: String, trim: true, default: "" },
@@ -11,26 +11,26 @@ const BlogSchema = new mongoose.Schema(
         title: { type: LocalizedString, required: true },
         content: { type: LocalizedString, required: true },
         cover: { type: String, required: true },
-        images: [{ type: String }], 
+        images: [{ type: String }],
         slug: { type: String, unique: true, required: true },
-        tags: [{ type: String}],
+        tags: [{ type: String }],
         category: { type: String, default: "" },
         subcategory: { type: String, default: "" },
         attachments: [
             {
                 filename: String,
                 url: String,
-                fileType: String, 
+                fileType: String,
                 size: Number
             }
         ],
         author: { type: Schema.Types.ObjectId, ref: "User", required: true },
         visibility: {
             type: String,
-            enum: ["public", "private","schools"],
+            enum: ["public", "private", "schools"],
             default: "public",
         },
-        allowedSchools: [{ type: String }], 
+        allowedSchools: [{ type: String }],
         status: {
             type: String,
             enum: ["draft", "published"],
@@ -40,8 +40,9 @@ const BlogSchema = new mongoose.Schema(
         isFeatured: { type: Boolean, default: false },
         isPinned: { type: Boolean, default: false },
     },
+    { timestamps: true }
 );
 
 
 const Blog = mongoose.model("Blog", BlogSchema);
-export default Blog;
+module.exports = Blog;

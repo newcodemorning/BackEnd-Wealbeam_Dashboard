@@ -1,25 +1,18 @@
 const express = require('express');
-const router = express.Router();
 const { authenticateUser, authorizeRole } = require('../common/middleware/auth');
-const { uploadPDF, getAllPDFs, downloadPDF, updatePDF, deletePDF } = require('../controllers/pdf.controller');
-const multer = require('multer');
-const path = require('path');
+const { addBlog, getAllBlogs } = require('../controllers/blog.controller');
+const { upload } = require("../middleware/uploadMiddleware");
+const router = express.Router(); 
 
-// Multer configuration using memory storage
-const upload = multer({
-    storage: multer.memoryStorage(),
-    limits: { fileSize: 20 * 1024 * 1024 }, // 20MB limit
-    fileFilter: (req, file, cb) => {
-        if (path.extname(file.originalname).toLowerCase() === '.pdf') {
-            cb(null, true);
-        } else {
-            cb(new Error('Only PDF   files are allowed!'), false);
-        }
-    }
-}).single('pdf');
+router.get('/', authenticateUser, authorizeRole(['super-admin', 'school', 'teacher']), getAllBlogs);
 
-
-router.post('/',authenticateUser,authorizeRole(['super-admin']),upload,uploadPDF);
-
+router.post('/', authenticateUser, authorizeRole(['super-admin']),
+    upload.fields([
+        { name: "cover", maxCount: 1 },
+        { name: "images", maxCount: 10 },
+        { name: "attachments", maxCount: 10 },
+    ]),
+    addBlog
+);
 
 module.exports = router;
