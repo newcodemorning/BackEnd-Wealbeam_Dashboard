@@ -3,7 +3,7 @@ const cors = require('cors');
 const mongoose = require("mongoose");
 const bodyParser = require('body-parser');
 const pdfRouter = require('./src/routes/pdf.router');
-const appInfo  = require('./src/routes/info.router');
+const appInfo = require('./src/routes/info.router');
 const faqsRoutes = require('./src/routes/faq.router');
 const authRoutes = require('./src/routes/auth.router');
 const classRouter = require('./src/routes/class.router')
@@ -32,10 +32,10 @@ mongoose
   .connect(process.env.MONGO_DATABASE_URL, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 30000, 
-  socketTimeoutMS: 45000,
-  maxPoolSize: 10
- })
+    serverSelectionTimeoutMS: 30000,
+    socketTimeoutMS: 45000,
+    maxPoolSize: 10
+  })
   .then(async () => {
     console.log("\x1b[32mDB Connected successfully !\x1b[0m");
     await createIndexes();
@@ -50,10 +50,12 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 
-
 // Request logger middleware
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  console.log(`[MAIN] Content-Type: ${req.headers['content-type']}`);
+  console.log(`[MAIN] Has body: ${!!req.body}`);
+  console.log(`[MAIN] Body keys: ${Object.keys(req.body || {}).length}`);
   next();
 });
 

@@ -1,13 +1,10 @@
-    import multer from "multer";
-    import path from "path";
-import fs from "fs";
-// const multer = require("multer");
-// const path = require("path");
-// const fs = require("fs");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
 
-
-let uploadDir = path.resolve("uploads/blogs");
-// const uploadDir = "/var/www/files";
+let uploadDir = path.resolve("uploads");
+console.log(`[FILE UPLOAD] Development mode: using upload directory at ${uploadDir}`);
+console.log(`Current Environment: ${process.env.ENVIRONMENT}`);
 
 if (process.env.ENVIRONMENT === "production") {
     uploadDir = "/var/www/files";
@@ -16,8 +13,6 @@ if (process.env.ENVIRONMENT === "production") {
 
 const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
 const MAX_FILE_COUNT = 10; // Maximum 10 files
-
-
 
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
@@ -77,27 +72,25 @@ const fileFilter = (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     const isExtensionValid = allowedExtensions.includes(ext);
     const isMimeTypeValid = allowedMimeTypes.includes(file.mimetype);
-    console.log(`[FILE UPLOAD] File upload attempt: name="${file.originalname}", ext="${ext}", mimetype="${file.mimetype}"`);
 
     if (isExtensionValid && isMimeTypeValid) {
         cb(null, true);
     } else {
-        const errorMessage = `Invalid file type. Only images are allowed with extensions: ${allowedExtensions.join(", ")}`;
+        const errorMessage = `Invalid file type. Only allowed extensions: ${allowedExtensions.join(", ")}`;
         cb(new Error(errorMessage));
     }
 };
 
-export const upload = multer({
+const upload = multer({
     storage: multer.diskStorage({
-        // destination: (req, file, cb) => cb(null, uploadDir),
         destination: (req, file, cb) => {
             const now = new Date();
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, "0");
             const day = String(now.getDate()).padStart(2, "0");
             const typeFolder = getFileTypeFolder(file.originalname);
-            const subDir = path.join(uploadDir, year.toString(), month, day, typeFolder);
-            console.log(`[FILE UPLOAD] Ensuring upload directory exists: ${subDir}`);
+            const sub_root_dir= req.meta && req.meta.type ? req.meta.type : "general";
+            const subDir = path.join(uploadDir, sub_root_dir, year.toString(), month, day, typeFolder);
             if (!fs.existsSync(subDir)) {
                 fs.mkdirSync(subDir, { recursive: true });
             }
@@ -113,7 +106,6 @@ export const upload = multer({
             const finalName = `${prefix}_${baseName}_${dateStr}_${uniqueSuffix}${ext}`;
             cb(null, finalName);
         }
-
     }),
     limits: {
         fileSize: MAX_FILE_SIZE,
@@ -123,12 +115,10 @@ export const upload = multer({
 });
 
 // Enhanced middleware for single file upload
-export const uploadSingle = (fieldName) => {
+const uploadSingle = (fieldName) => {
     return (req, res, next) => {
         upload.single(fieldName)(req, res, (err) => {
             if (err) {
-                console.error("Upload error:", err);
-
                 if (err instanceof multer.MulterError) {
                     if (err.code === 'LIMIT_FILE_SIZE') {
                         return res.status(400).json({
@@ -145,8 +135,8 @@ export const uploadSingle = (fieldName) => {
             }
 
             if (req.file) {
-                req.uploadedFileName = req.file.savedFileName;
-                console.log("File uploaded successfully:", req.file.savedFileName);
+                req.uploadedFileName = req.file.filename;
+                req.uploadedFilePath = req.file.path.replace(uploadDir + path.sep, '').replace(/\\/g, '/');
             }
 
             next();
@@ -154,12 +144,10 @@ export const uploadSingle = (fieldName) => {
     };
 };
 
-export const uploadMultiple = (fieldName, maxCount = 10) => {
+const uploadMultiple = (fieldName, maxCount = 10) => {
     return (req, res, next) => {
         upload.array(fieldName, maxCount)(req, res, (err) => {
             if (err) {
-                console.error("Upload error:", err);
-
                 if (err instanceof multer.MulterError) {
                     if (err.code === 'LIMIT_FILE_SIZE') {
                         return res.status(400).json({
@@ -181,10 +169,11 @@ export const uploadMultiple = (fieldName, maxCount = 10) => {
                 });
             }
 
-            // Add filenames to request for easy access
             if (req.files && req.files.length > 0) {
-                req.uploadedFileNames = req.files.map(file => file.savedFileName);
-                console.log("Files uploaded successfully:", req.uploadedFileNames);
+                req.uploadedFileNames = req.files.map(file => file.filename);
+                req.uploadedFilePaths = req.files.map(file =>
+                    file.path.replace(uploadDir + path.sep, '').replace(/\\/g, '/')
+                );
             }
 
             next();
@@ -192,12 +181,17 @@ export const uploadMultiple = (fieldName, maxCount = 10) => {
     };
 };
 
-// export default upload;
+module.exports = {
+    upload,
+    uploadSingle,
+    uploadMultiple,
+    uploader: upload
+};
 
-export const uploader = upload;
 
-
-/**
+/**\
+ * #documentation 
+ * 
  * File Upload Middleware using Multer
  *
  * Features:
@@ -207,6 +201,7 @@ export const uploader = upload;
  * - Adds unique filenames with prefix, sanitized original name, date, and random suffix.
  * - Restricts max file size (15MB) and max file count (10).
  * - Provides error handling for common Multer errors (size, count, invalid type).
+ * - Returns both filename and full relative path for uploaded files.
  *
  * Usage Examples:
  * 
@@ -217,22 +212,33 @@ export const uploader = upload;
  * ]), createApplicant);
  *
  * const nationalIdImage = req.files?.nationalIdImage?.[0]?.filename || null;
+ * const nationalIdImagePath = req.files?.nationalIdImage?.[0]?.path.replace(uploadDir + path.sep, '').replace(/\\/g, '/') || null;
  * const highSchoolCertificate = req.files?.highSchoolCertificate?.[0]?.filename || null;
- * const otherDocuments = req.files?.otherDocuments?.map(file => file.filename) || [];
+ * const otherDocuments = req.files?.otherDocuments?.map(file => file.path.replace(uploadDir + path.sep, '').replace(/\\/g, '/')) || [];
  *
  * 2) Uploading single file with middleware:
  * router.post("/upload-single", uploadSingle("singleFile"), (req, res) => {
  *   if (!req.file) return res.status(400).json({ status: "error", message: "No file uploaded" });
- *   res.json({ status: "success", filename: req.uploadedFileName });
+ *   res.json({ 
+ *     status: "success", 
+ *     filename: req.uploadedFileName,
+ *     filepath: req.uploadedFilePath 
+ *   });
  * });
  *
  * 3️) Uploading multiple files with middleware:
  * router.post("/upload-multiple", uploadMultiple("multiFiles", 5), (req, res) => {
- *   res.json({ status: "success", filenames: req.uploadedFileNames });
+ *   res.json({ 
+ *     status: "success", 
+ *     filenames: req.uploadedFileNames,
+ *     filepaths: req.uploadedFilePaths 
+ *   });
  * });
  *
  * Notes:
- * - Default upload directory is "./uploads" (changes to "/var/www/files" in production).
+ * - Default upload directory is "./uploads/blogs" (changes to "/var/www/files" in production).
  * - Subdirectories are automatically created: /year/month/day/{images|documents|others}.
  * - Only allowed file types/extensions will be stored.
+ * - Full relative paths are available via req.uploadedFilePath (single) or req.uploadedFilePaths (multiple).
+ * - Paths are normalized with forward slashes for cross-platform compatibility.
  */
