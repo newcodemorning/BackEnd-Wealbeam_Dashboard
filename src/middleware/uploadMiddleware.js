@@ -89,7 +89,7 @@ const upload = multer({
             const month = String(now.getMonth() + 1).padStart(2, "0");
             const day = String(now.getDate()).padStart(2, "0");
             const typeFolder = getFileTypeFolder(file.originalname);
-            const sub_root_dir= req.meta && req.meta.type ? req.meta.type : "general";
+            const sub_root_dir = req.meta && req.meta.type ? req.meta.type : "general";
             const subDir = path.join(uploadDir, sub_root_dir, year.toString(), month, day, typeFolder);
             if (!fs.existsSync(subDir)) {
                 fs.mkdirSync(subDir, { recursive: true });
@@ -104,6 +104,15 @@ const upload = multer({
             const uniqueSuffix = `${Date.now()}_${Math.floor(Math.random() * 1000)}`;
             const prefix = "FILE";
             const finalName = `${prefix}_${baseName}_${dateStr}_${uniqueSuffix}${ext}`;
+
+            // Store relative path on file object
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, "0");
+            const day = String(now.getDate()).padStart(2, "0");
+            const typeFolder = getFileTypeFolder(file.originalname);
+            const sub_root_dir = req.meta && req.meta.type ? req.meta.type : "general";
+            file.relativePath = `${sub_root_dir}/${year}/${month}/${day}/${typeFolder}/${finalName}`;
+
             cb(null, finalName);
         }
     }),

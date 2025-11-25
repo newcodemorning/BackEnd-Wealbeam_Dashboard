@@ -16,14 +16,7 @@ const BlogSchema = new mongoose.Schema(
         tags: [{ type: String }],
         category: { type: String, default: "" },
         subcategory: { type: String, default: "" },
-        attachments: [
-            {
-                filename: String,
-                url: String,
-                fileType: String,
-                size: Number
-            }
-        ],
+        attachments: [{ type: String }],
         author: { type: Schema.Types.ObjectId, ref: "User", required: true },
         visibility: {
             type: String,
