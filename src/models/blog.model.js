@@ -20,7 +20,7 @@ const BlogSchema = new mongoose.Schema(
         author: { type: Schema.Types.ObjectId, ref: "User", required: true },
         visibility: {
             type: String,
-            enum: ["public", "private", "schools"],
+            enum: ["public", "private", "both"],
             default: "public",
         },
         allowedSchools: [{ type: String }],

@@ -1,5 +1,5 @@
 const express = require('express');
-const { authenticateUser, authorizeRole } = require('../common/middleware/auth');
+const { authenticateUser, authorizeRole, checkAuth } = require('../common/middleware/auth');
 const { addBlog, getAllBlogs, getAllBlogsForAdmin, checkSlugExists, getBlogById, getBlogBySlug, deleteBlog, updateBlog } = require('../controllers/blog.controller');
 const { upload } = require('../middleware/uploadMiddleware');
 const pagination = require('../middleware/pagination');
@@ -10,6 +10,7 @@ const metadata = (req, res, next) => { req.meta = { type: 'blog' }; next(); };
 const router = express.Router();
 
 router.get('/',
+    checkAuth,
     pagination({ defaultLimit: 5, maxLimit: 50, allowedFilters: ['category', 'author'] }),
     getAllBlogs);
 

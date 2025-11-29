@@ -165,4 +165,25 @@ const authorizeRole = (allowedRoles) => {
   };
 };
 
-module.exports = { authenticateUser, authorizeRole };
+
+const checkAuth = (req, res, next) => {
+  const token = req.header('Authorization')?.replace('Bearer ', '');
+
+  if (!token) {
+    req.user = null;
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    console.error(error);
+    req.user = null;
+    next();
+  }
+};
+
+
+module.exports = { authenticateUser, authorizeRole, checkAuth };

@@ -4,17 +4,25 @@ const Blog = require('../models/blog.model');
 
 class BlogService {
 
-  static async getAllBlogs(language, filter, skip, limit, sort) {
+  static async getAllBlogs(language, filter, skip, limit, sort, checkLogedin) {
     try {
       const EnvBaseURL = process.env.ENVIRONMENT === 'production'
         ? process.env.PROD_BASE_URL
         : process.env.DEV_BASE_URL;
-      const blogs = await Blog.find(filter)
+
+      const visibilityFilter = checkLogedin
+        ? { visibility: { $in: ['private', 'both'] } }
+        : { visibility: { $in: ['public', 'both'] } };
+
+      const combinedFilter = { ...filter, ...visibilityFilter };
+
+      const blogs = await Blog.find(combinedFilter)
         .select('title content cover attachments images slug tags category isFeatured isPinned')
         .skip(skip)
         .limit(limit)
         .sort(sort)
         .lean();
+
       const buildURL = (path) => path && !path.startsWith('http') ? `${EnvBaseURL}/${path}` : path;
       const processedBlogs = blogs.map(blog => ({
         ...blog,
@@ -29,6 +37,8 @@ class BlogService {
       throw new Error(`Failed to get Blogs: ${error.message}`);
     }
   }
+
+
 
   static async getAdminBlogs(language, filter, skip, limit, sort) {
     try {
@@ -77,6 +87,10 @@ class BlogService {
   static async checkSlugExists(slug) {
     try {
       const blog = await Blog.findOne({ slug });
+      const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+      if (!slugRegex.test(slug)) {
+        return res.status(400).json({ success: false, message: 'Invalid slug format , it should only contain lowercase letters, numbers, and hyphens' });
+      }
       return !!blog;
     } catch (error) {
       throw new Error(`Failed to check slug existence: ${error.message}`);
@@ -200,5 +214,10 @@ class BlogService {
   }
 
 }
+
+
+
+// TODO : check logged in user for private blogs in GET by id and slug
+
 
 module.exports = BlogService;

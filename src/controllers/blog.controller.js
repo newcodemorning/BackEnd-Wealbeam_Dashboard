@@ -4,9 +4,17 @@ const BlogService = require('../services/blog.service');
 const getAllBlogs = async (req, res) => {
   try {
     const lang = req.lang || 'en';
+    const checkLogedin = req.user;
+
+
     const { page, limit, skip, sort, filter } = req.pagination;
     const total = await BlogService.countBlogs(filter);
-    const blogs = await BlogService.getAllBlogs(lang, filter, skip, limit, sort);
+    const blogs = await BlogService.getAllBlogs(lang, filter, skip, limit, sort, checkLogedin);
+
+
+    
+
+
     res.status(200).json({
       success: true,
       page,
