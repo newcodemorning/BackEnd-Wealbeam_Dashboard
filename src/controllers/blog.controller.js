@@ -8,11 +8,11 @@ const getAllBlogs = async (req, res) => {
 
 
     const { page, limit, skip, sort, filter } = req.pagination;
-    const total = await BlogService.countBlogs(filter);
+    const total = await BlogService.countBlogs(filter, checkLogedin);
     const blogs = await BlogService.getAllBlogs(lang, filter, skip, limit, sort, checkLogedin);
 
 
-    
+
 
 
     res.status(200).json({
@@ -73,11 +73,6 @@ const addBlog = async (req, res) => {
     const status = (req.body.status || "published").trim();
     const isFeatured = req.body.isFeatured === 'true';
     const isPinned = req.body.isPinned === 'true';
-
-    const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-    if (!slugRegex.test(slug)) {
-      return res.status(400).json({ success: false, message: 'Invalid slug format , it should only contain lowercase letters, numbers, and hyphens' });
-    }
 
     const blogData = {
       title: { en: titleEn, ar: titleAr },
@@ -161,16 +156,12 @@ const updateBlog = async (req, res) => {
     if (!req.user || !req.user.id) {
       return res.status(401).json({ success: false, message: 'User authentication required' });
     }
-
     const { id } = req.params;
 
-    // Prepare file updates
     const newFiles = {};
-
     if (req.files?.cover?.[0]) {
       newFiles.cover = req.files.cover[0].relativePath;
     }
-
     if (req.files?.images) {
       newFiles.images = req.files.images.map(file => file.relativePath);
     }
@@ -179,7 +170,6 @@ const updateBlog = async (req, res) => {
       newFiles.attachments = req.files.attachments.map(file => file.relativePath);
     }
 
-    // Prepare update data
     const updateData = {};
 
     if (req.body.title) {
@@ -197,14 +187,6 @@ const updateBlog = async (req, res) => {
     }
 
     if (req.body.slug) {
-      const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-      if (!slugRegex.test(req.body.slug)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid slug format, it should only contain lowercase letters, numbers, and hyphens'
-        });
-      }
-
       // Check if slug already exists (excluding current blog)
       const existingBlog = await BlogService.getBlogById(id);
       if (existingBlog.slug !== req.body.slug) {

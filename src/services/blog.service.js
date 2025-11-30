@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
 const Blog = require('../models/blog.model');
+const { deleteFile, deleteFiles, deleteOldFiles } = require('../middleware/uploadMiddleware');
 
 
 class BlogService {
@@ -17,7 +18,7 @@ class BlogService {
       const combinedFilter = { ...filter, ...visibilityFilter };
 
       const blogs = await Blog.find(combinedFilter)
-        .select('title content cover attachments images slug tags category isFeatured isPinned')
+        .select('title content cover attachments images slug tags category isFeatured isPinned  visibility ')
         .skip(skip)
         .limit(limit)
         .sort(sort)
@@ -76,9 +77,14 @@ class BlogService {
     }
   }
 
-  static async countBlogs(filter) {
+  static async countBlogs(filter, checkLogedin) {
     try {
-      return await Blog.countDocuments(filter);
+      const visibilityFilter = checkLogedin
+        ? { visibility: { $in: ['private', 'both'] } }
+        : { visibility: { $in: ['public', 'both'] } };
+
+      const combinedFilter = { ...filter, ...visibilityFilter };
+      return await Blog.countDocuments(combinedFilter);
     } catch (error) {
       throw new Error(`Failed to count Blogs: ${error.message}`);
     }
@@ -86,11 +92,11 @@ class BlogService {
 
   static async checkSlugExists(slug) {
     try {
-      const blog = await Blog.findOne({ slug });
       const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
       if (!slugRegex.test(slug)) {
-        return res.status(400).json({ success: false, message: 'Invalid slug format , it should only contain lowercase letters, numbers, and hyphens' });
+        throw new Error('Invalid slug format, it should only contain lowercase letters, numbers, and hyphens');
       }
+      const blog = await Blog.findOne({ slug });
       return !!blog;
     } catch (error) {
       throw new Error(`Failed to check slug existence: ${error.message}`);
@@ -169,8 +175,25 @@ class BlogService {
 
   static async deleteBlog(blogId) {
     try {
-      return await Blog.findByIdAndDelete(blogId);
-      // TODO: Add logic to remove associated files from storage if needed
+      const blog = await Blog.findById(blogId);
+      if (!blog) {
+        throw new Error('Blog not found');
+      }
+
+      const filesToDelete = [];
+
+      if (blog.cover) filesToDelete.push(blog.cover);
+      if (blog.images && blog.images.length > 0) filesToDelete.push(...blog.images);
+      if (blog.attachments && blog.attachments.length > 0) filesToDelete.push(...blog.attachments);
+
+      await Blog.findByIdAndDelete(blogId);
+
+      if (filesToDelete.length > 0) {
+        console.log(`[BLOG SERVICE] Deleting ${filesToDelete.length} files for blog ${blogId}`);
+        await deleteFiles(filesToDelete);
+      }
+
+      return blog;
     } catch (error) {
       throw new Error(`Failed to delete Blog: ${error.message}`);
     }
@@ -183,31 +206,51 @@ class BlogService {
         throw new Error('Blog not found');
       }
 
-      // Handle file updates
+      const filesToDelete = [];
+
+      // Handle cover update - delete old if new one provided
       if (newFiles.cover) {
+        if (existingBlog.cover) {
+          filesToDelete.push(existingBlog.cover);
+        }
         updateData.cover = newFiles.cover;
-        // TODO: Delete old cover file from storage
       }
 
+      // Handle images update - delete old ones if replacing
       if (newFiles.images && newFiles.images.length > 0) {
-        // Option 1: Replace all images
+        if (existingBlog.images && existingBlog.images.length > 0) {
+          filesToDelete.push(...existingBlog.images);
+        }
         updateData.images = newFiles.images;
-        // TODO: Delete old image files from storage
 
-        // Option 2: Append new images (uncomment if needed)
+        // Alternative: Append new images instead of replace (uncomment if needed)
         // updateData.images = [...existingBlog.images, ...newFiles.images];
       }
 
+      // Handle attachments update - delete old ones if replacing
       if (newFiles.attachments && newFiles.attachments.length > 0) {
-        // Option 1: Replace all attachments
+        if (existingBlog.attachments && existingBlog.attachments.length > 0) {
+          filesToDelete.push(...existingBlog.attachments);
+        }
         updateData.attachments = newFiles.attachments;
-        // TODO: Delete old attachment files from storage
 
-        // Option 2: Append new attachments (uncomment if needed)
+        // Alternative: Append new attachments instead of replace (uncomment if needed)
         // updateData.attachments = [...existingBlog.attachments, ...newFiles.attachments];
       }
 
-      return await Blog.findByIdAndUpdate(blogId, updateData, { new: true, runValidators: true });
+      // Update the blog
+      const updatedBlog = await Blog.findByIdAndUpdate(blogId, updateData, { new: true, runValidators: true });
+
+      // Delete old files after successful update
+      if (filesToDelete.length > 0) {
+        console.log(`[BLOG SERVICE] Deleting ${filesToDelete.length} old files for blog ${blogId}`);
+        deleteFiles(filesToDelete).catch(err => {
+          console.error(`[BLOG SERVICE] Error deleting old files:`, err);
+          // Don't throw error here as blog update was successful
+        });
+      }
+
+      return updatedBlog;
     } catch (error) {
       throw new Error(`Failed to update Blog: ${error.message}`);
     }

@@ -9,8 +9,8 @@ const validate = (schema, property = 'body') => async (req, res, next) => {
         });
         next();
     } catch (error) {
+        console.log("Validation error middleware:", error);
         if (error.details) {
-            // If it's a Joi validation error
             const errors = error.details.map(detail => ({
                 field: detail.path.join('.'),
                 message: detail.message
@@ -20,7 +20,6 @@ const validate = (schema, property = 'body') => async (req, res, next) => {
                 errors 
             });
         }
-        // Handle unexpected errors
         console.error("Validation Error:", error);
         return res.status(500).json({ 
             status: 'error',

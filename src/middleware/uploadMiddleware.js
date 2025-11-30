@@ -190,10 +190,36 @@ const uploadMultiple = (fieldName, maxCount = 10) => {
     };
 };
 
+
+
+function deleteFile(relativePath) {
+    const fullPath = path.join(uploadDir, relativePath);
+    console.log(`[FILE DELETE] Attempting to delete file: ${fullPath}`);
+    if (fs.existsSync(fullPath)) {
+        fs.unlink(fullPath, (err) => {
+            if (err) {
+                console.error(`[FILE DELETE] Failed to delete file: ${fullPath}`, err);
+            } else {
+                console.log(`[FILE DELETE] Successfully deleted file: ${fullPath}`);
+            }
+        });
+    }
+}
+
+function deleteFiles(relativePaths) {
+    if (!Array.isArray(relativePaths)) return;
+    relativePaths.forEach(deleteFile);
+}
+
+
+
+
 module.exports = {
     upload,
     uploadSingle,
     uploadMultiple,
+    deleteFile,
+    deleteFiles,
     uploader: upload
 };
 
