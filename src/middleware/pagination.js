@@ -1,5 +1,3 @@
-
-
 const pagination = ({ defaultLimit = 5, maxLimit = 50, allowedFilters = [] } = {}) => {
     return (req, res, next) => {
         let page = parseInt(req.query.page) || 1;
