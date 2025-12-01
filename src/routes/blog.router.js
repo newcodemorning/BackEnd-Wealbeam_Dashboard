@@ -12,12 +12,12 @@ const router = express.Router();
 
 router.get('/',
     checkAuth,
-    pagination({ defaultLimit: 5, maxLimit: 50, allowedFilters: ['category', 'author', 'visibility'] }),
+    pagination({ defaultLimit: 5, maxLimit: 50, allowedFilters: ['category', 'author', 'visibility', 'search'] }),
     getAllBlogs);
 
 router.get('/admin', authenticateUser,
     authorizeRole(['super-admin', 'school', 'teacher']),
-    pagination({ defaultLimit: 5, maxLimit: 50, allowedFilters: ['category', 'author', 'visibility'] }),
+    pagination({ defaultLimit: 5, maxLimit: 50, allowedFilters: ['category', 'author', 'visibility', 'search'] }),
     getAllBlogsForAdmin
 );
 
