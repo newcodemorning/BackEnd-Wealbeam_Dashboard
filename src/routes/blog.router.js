@@ -1,6 +1,6 @@
 const express = require('express');
 const { authenticateUser, authorizeRole, checkAuth } = require('../common/middleware/auth');
-const { addBlog, getAllBlogs, getAllBlogsForAdmin, checkSlugExists, getBlogById, getBlogBySlug, deleteBlog, updateBlog } = require('../controllers/blog.controller');
+const { addBlog, getAllBlogs, getAllBlogsForAdmin, checkSlugExists, getBlogById, getBlogBySlug, getFilterOptions, getBlogAdminById,deleteBlog, updateBlog } = require('../controllers/blog.controller');
 const { upload } = require('../middleware/uploadMiddleware');
 const { blogSchema, updateBlogSchema } = require('../common/validations/blog.validator');
 const pagination = require('../middleware/pagination');
@@ -46,7 +46,9 @@ router.put('/:id',
 );
 
 router.get('/check-slug/:slug', checkSlugExists);
+router.get('/filter/data', getFilterOptions);
 router.get('/:id', getBlogById);
+router.get('/admin/:id', getBlogAdminById);
 router.get('/slug/:slug', getBlogBySlug);
 router.delete('/:id', authenticateUser, authorizeRole(['super-admin']), deleteBlog);
 

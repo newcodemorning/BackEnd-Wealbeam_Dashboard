@@ -1,6 +1,8 @@
 const { v4: uuidv4 } = require('uuid');
 const Blog = require('../models/blog.model');
 const { deleteFile, deleteFiles, deleteOldFiles } = require('../middleware/uploadMiddleware');
+const User = require('../models/user.model');
+const SuperAdmin = require('../models/super-admin.model');
 
 
 class BlogService {
@@ -68,6 +70,11 @@ class BlogService {
     }
   }
 
+
+
+
+
+
   static async addBlog(blogData) {
     try {
       const newBlog = new Blog(blogData);
@@ -132,6 +139,18 @@ class BlogService {
     }
   }
 
+  static async getBlogForAdminById(blogId) {
+    try {
+      const blog = await Blog.findById(blogId)
+        .populate('author', 'name email')
+        .lean();
+
+      return blog || null;
+    } catch (error) {
+      throw new Error(`Failed to get Blog for Admin by ID: ${error.message}`);
+    }
+  }
+
   static async getBlogBySlug(slug, language) {
     try {
       const EnvBaseURL = process.env.ENVIRONMENT === 'production'
@@ -139,6 +158,7 @@ class BlogService {
         : process.env.DEV_BASE_URL;
 
       const blog = await Blog.findOne({ slug }).lean();
+
 
       if (!blog) {
         return null;
@@ -253,6 +273,30 @@ class BlogService {
       return updatedBlog;
     } catch (error) {
       throw new Error(`Failed to update Blog: ${error.message}`);
+    }
+  }
+
+
+
+  static async getFilterOptions() {
+    try {
+      const categories = await Blog.distinct('category');
+      const authors = await Blog.distinct('author');
+      const visibilities = await Blog.distinct('visibility');
+
+      const filteredAuthors = authors.length > 0
+        ? await SuperAdmin.find({ user: { $in: authors } })
+          .select('_id firstName lastName')
+          .lean()
+        : [];
+
+      return {
+        categories: categories.filter(cat => cat),
+        authors: filteredAuthors,
+        visibilities,
+      };
+    } catch (error) {
+      throw new Error(`Failed to get filter options: ${error.message}`);
     }
   }
 

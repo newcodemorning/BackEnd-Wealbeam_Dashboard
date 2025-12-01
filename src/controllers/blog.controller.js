@@ -5,16 +5,9 @@ const getAllBlogs = async (req, res) => {
   try {
     const lang = req.lang || 'en';
     const checkLogedin = req.user;
-
-
     const { page, limit, skip, sort, filter } = req.pagination;
     const total = await BlogService.countBlogs(filter, checkLogedin);
     const blogs = await BlogService.getAllBlogs(lang, filter, skip, limit, sort, checkLogedin);
-
-
-
-
-
     res.status(200).json({
       success: true,
       page,
@@ -122,7 +115,21 @@ const getBlogById = async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
-}
+};
+
+
+const getBlogAdminById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const blog = await BlogService.getBlogForAdminById(id);
+    if (!blog) {
+      return res.status(404).json({ success: false, message: 'Blog not found' });
+    }
+    res.status(200).json({ success: true, data: blog });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 const getBlogBySlug = async (req, res) => {
   try {
@@ -245,12 +252,24 @@ const updateBlog = async (req, res) => {
   }
 };
 
+const getFilterOptions = async (req, res) => {
+  try {
+    const filterOptions = await BlogService.getFilterOptions();
+    res.status(200).json({ success: true, data: filterOptions });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
 module.exports = {
   getAllBlogs,
   addBlog,
   getAllBlogsForAdmin,
   checkSlugExists,
   getBlogById,
+  getBlogAdminById,
+  getFilterOptions,
   getBlogBySlug,
   deleteBlog,
   updateBlog
