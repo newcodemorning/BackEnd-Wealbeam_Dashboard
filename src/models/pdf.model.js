@@ -2,10 +2,13 @@ const mongoose = require('mongoose');
 
 const pdfSchema = new mongoose.Schema({
   title: {
-    type: String,
-    required: true
+    en: { type: String, required: true },
+    ar: { type: String, required: true }
   },
-  description: String,
+  description: {
+    en: { type: String, default: '' },
+    ar: { type: String, default: '' }
+  },
   fileName: {
     type: String,
     required: true

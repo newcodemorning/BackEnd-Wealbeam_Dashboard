@@ -7,7 +7,8 @@ const {
   getAllPDFsForDashboard,
   downloadPDF,
   updatePDF,
-  deletePDF
+  deletePDF,
+  migratePDFs
 } = require('../controllers/pdf.controller');
 const { upload } = require('../middleware/uploadMiddleware');
 
@@ -68,6 +69,14 @@ router.delete(
   authenticateUser,
   authorizeRole(['super-admin', 'school']),
   deletePDF
+);
+
+// Temporary migration route - remove after running once
+router.post(
+  '/migrate',
+  authenticateUser,
+  authorizeRole(['super-admin']),
+  migratePDFs
 );
 
 module.exports = router;

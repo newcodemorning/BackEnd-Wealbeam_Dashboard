@@ -3,6 +3,66 @@ const Student = require('../models/student.model');
 const { deleteFile } = require('../middleware/uploadMiddleware');
 
 class PDFService {
+
+  // Temporary migration function - run once to update old data
+  static async migrateOldPDFsToMultilingual() {
+    try {
+      console.log('[PDF Migration] Starting migration of old PDFs to multilingual format...');
+
+      // Find PDFs with old string format (title is string, not object)
+      const oldPDFs = await PDF.find({
+        $or: [
+          { 'title.en': { $exists: false } },
+          { 'description.en': { $exists: false } }
+        ]
+      });
+
+      console.log(`[PDF Migration] Found ${oldPDFs.length} PDFs to migrate`);
+
+      let migrated = 0;
+      for (const pdf of oldPDFs) {
+        const updates = {};
+
+        // Migrate title
+        if (typeof pdf.title === 'string') {
+          updates.title = {
+            en: pdf.title,
+            ar: pdf.title
+          };
+        }
+
+        // Migrate description
+        if (typeof pdf.description === 'string' || !pdf.description) {
+          updates.description = {
+            en: pdf.description || '',
+            ar: pdf.description || ''
+          };
+        }
+
+        if (Object.keys(updates).length > 0) {
+          await PDF.findByIdAndUpdate(pdf._id, { $set: updates });
+          migrated++;
+          console.log(`[PDF Migration] Migrated PDF: ${pdf._id}`);
+        }
+      }
+
+      console.log(`[PDF Migration] Successfully migrated ${migrated} PDFs`);
+      return { success: true, migrated };
+    } catch (error) {
+      console.error('[PDF Migration] Error:', error);
+      throw new Error(`Migration failed: ${error.message}`);
+    }
+  }
+
+  static _localize(field, lang = 'en') {
+    if (field === undefined || field === null) return '';
+    if (typeof field === 'string') return field;
+    if (field[lang]) return field[lang];
+    if (field.en) return field.en;
+    const first = Object.values(field).find(v => v !== undefined && v !== null && v !== '');
+    return first || '';
+  }
+
   static async createPDF(data, pdfPath, coverImagePath = null) {
     try {
       if (!pdfPath) {
@@ -36,44 +96,9 @@ class PDFService {
     }
   }
 
-  static async getAllPDFs(userRole, userId) {
+  static async getAllPDFs(userRole, userId, lang = 'en') {
     try {
       let query = { isVisible: true };
-
-
-      // temp function to update existing PDFs without isPublic field
-      // await PDF.updateMany(
-      //   { isPublic: { $exists: false } },
-      //   { $set: { isPublic: true } }
-      // );
-
-      // await PDF.updateMany(
-      //   { isVisible: { $exists: false } },
-      //   { $set: { isVisible: true } }
-      // );
-
-      // await PDF.updateMany(
-      //   { supportedLanguages: { $exists: false } },
-      //   { $set: { supportedLanguages: ['en'] } }
-      // );
-
-      // await PDF.updateMany(
-      //   { targetSchools: { $exists: false } },
-      //   { $set: { targetSchools: [] } }
-      // );
-
-      // await PDF.updateMany(
-      //   { viewCount: { $exists: false } },
-      //   { $set: { viewCount: 0 } }
-      // );
-
-      // await PDF.updateMany(
-      //   { uploadedAt: { $exists: false } },
-      //   { $set: { uploadedAt: new Date() } }
-      // );
-
-      
-
 
       // If user is a student, filter by their school
       if (userRole === 'student') {
@@ -82,7 +107,6 @@ class PDFService {
           throw new Error('Student school not found');
         }
 
-        // Get PDFs that are either public OR targeted to student's school
         query.$or = [
           { isPublic: true },
           { targetSchools: student.school }
@@ -102,7 +126,6 @@ class PDFService {
             { targetSchools: { $in: schoolIds } }
           ];
         } else {
-          // If parent has no students, only show public PDFs
           query.isPublic = true;
         }
       }
@@ -121,6 +144,8 @@ class PDFService {
 
       return pdfs.map(pdf => ({
         ...pdf,
+        title: this._localize(pdf.title, lang),
+        description: this._localize(pdf.description, lang),
         filePath: pdf.filePath && !pdf.filePath.startsWith('http')
           ? `${EnvBaseURL}/${pdf.filePath}`
           : pdf.filePath,
@@ -133,7 +158,7 @@ class PDFService {
     }
   }
 
-  static async getAllPDFsForDashboard() {
+  static async getAllPDFsForDashboard(lang = 'en') {
     try {
       const pdfs = await PDF.find()
         .populate('uploadedBy', 'email')
@@ -149,6 +174,8 @@ class PDFService {
 
       return pdfs.map(pdf => ({
         ...pdf,
+        title: this._localize(pdf.title, lang),
+        description: this._localize(pdf.description, lang),
         filePath: pdf.filePath && !pdf.filePath.startsWith('http')
           ? `${EnvBaseURL}/${pdf.filePath}`
           : pdf.filePath,
@@ -161,7 +188,7 @@ class PDFService {
     }
   }
 
-  static async getPDFById(id, userRole, userId) {
+  static async getPDFById(id, userRole, userId, lang = 'en') {
     try {
       const pdf = await PDF.findById(id)
         .populate('uploadedBy', 'email')
@@ -221,6 +248,8 @@ class PDFService {
 
       return {
         ...pdf,
+        title: this._localize(pdf.title, lang),
+        description: this._localize(pdf.description, lang),
         viewCount: (pdf.viewCount || 0) + 1,
         filePath: pdf.filePath && !pdf.filePath.startsWith('http')
           ? `${EnvBaseURL}/${pdf.filePath}`

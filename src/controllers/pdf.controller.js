@@ -1,6 +1,23 @@
 const PDFService = require('../services/pdf.service');
 const path = require('path');
 
+// Temporary migration endpoint - remove after running once
+const migratePDFs = async (req, res) => {
+  try {
+    const result = await PDFService.migrateOldPDFsToMultilingual();
+    res.status(200).json({
+      success: true,
+      message: 'Migration completed successfully',
+      ...result
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 const uploadPDF = async (req, res) => {
   try {
     if (!req.files || !req.files.pdf) {
@@ -11,16 +28,26 @@ const uploadPDF = async (req, res) => {
       });
     }
 
-    if (!req.body.title) {
-      console.log('No title found in request');
-      return res.status(400).json({
-        success: false,
-        message: 'Title is required'
-      });
-    }
+    console.log('[PDF Upload] Request body:', req.body);
+    console.log('[PDF Upload] Files:', req.files);
 
     const pdfFile = req.files.pdf[0];
     const coverFile = req.files.coverImage ? req.files.coverImage[0] : null;
+
+    // Parse multilingual title - handle bracket notation, dot notation in body, and separate fields
+    const titleEn = req.body['title[en]'] || req.body['title.en'] || req.body.titleEn || '';
+    const titleAr = req.body['title[ar]'] || req.body['title.ar'] || req.body.titleAr || titleEn;
+
+    if (!titleEn) {
+      return res.status(400).json({
+        success: false,
+        message: 'English title is required'
+      });
+    }
+
+    // Parse multilingual description - handle bracket notation, dot notation in body, and separate fields
+    const descriptionEn = req.body['description[en]'] || req.body['description.en'] || req.body.descriptionEn || '';
+    const descriptionAr = req.body['description[ar]'] || req.body['description.ar'] || req.body.descriptionAr || descriptionEn;
 
     // Parse supported languages
     const supportedLanguages = req.body.supportedLanguages
@@ -36,8 +63,8 @@ const uploadPDF = async (req, res) => {
     const isVisible = req.body.isVisible !== 'false';
 
     const pdfData = {
-      title: req.body.title,
-      description: req.body.description,
+      title: { en: titleEn, ar: titleAr },
+      description: { en: descriptionEn, ar: descriptionAr },
       fileName: pdfFile.originalname,
       supportedLanguages,
       targetSchools,
@@ -67,7 +94,8 @@ const uploadPDF = async (req, res) => {
 
 const getAllPDFsForDashboard = async (req, res) => {
   try {
-    const pdfs = await PDFService.getAllPDFsForDashboard();
+    const lang = req.lang || 'en';
+    const pdfs = await PDFService.getAllPDFsForDashboard(lang);
     res.status(200).json({
       success: true,
       count: pdfs.length,
@@ -80,7 +108,8 @@ const getAllPDFsForDashboard = async (req, res) => {
 
 const getAllPDFs = async (req, res) => {
   try {
-    const pdfs = await PDFService.getAllPDFs(req.user.role, req.user.id);
+    const lang = req.lang || 'en';
+    const pdfs = await PDFService.getAllPDFs(req.user.role, req.user.id, lang);
     res.status(200).json({ success: true, data: pdfs });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -89,7 +118,8 @@ const getAllPDFs = async (req, res) => {
 
 const downloadPDF = async (req, res) => {
   try {
-    const pdf = await PDFService.getPDFById(req.params.id, req.user.role, req.user.id);
+    const lang = req.lang || 'en';
+    const pdf = await PDFService.getPDFById(req.params.id, req.user.role, req.user.id, lang);
 
     // Get the absolute path for download
     const uploadDir = process.env.ENVIRONMENT === 'production'
@@ -117,13 +147,31 @@ const downloadPDF = async (req, res) => {
 const updatePDF = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, supportedLanguages, targetSchools, isPublic, isVisible } = req.body;
+    const { supportedLanguages, targetSchools, isPublic, isVisible } = req.body;
 
-    if (!title) {
-      return res.status(400).json({ success: false, message: 'Title is required' });
+    console.log('[PDF Update] Request body:', req.body);
+
+    const updateData = {};
+
+    // Handle multilingual title - handle bracket notation, dot notation, and separate fields
+    const titleEn = req.body['title[en]'] || req.body['title.en'] || req.body.titleEn;
+    const titleAr = req.body['title[ar]'] || req.body['title.ar'] || req.body.titleAr;
+
+    if (titleEn || titleAr) {
+      updateData.title = {};
+      if (titleEn) updateData.title.en = titleEn;
+      if (titleAr) updateData.title.ar = titleAr;
     }
 
-    const updateData = { title, description };
+    // Handle multilingual description - handle bracket notation, dot notation, and separate fields
+    const descriptionEn = req.body['description[en]'] || req.body['description.en'] || req.body.descriptionEn;
+    const descriptionAr = req.body['description[ar]'] || req.body['description.ar'] || req.body.descriptionAr;
+
+    if (descriptionEn !== undefined || descriptionAr !== undefined) {
+      updateData.description = {};
+      if (descriptionEn !== undefined) updateData.description.en = descriptionEn;
+      if (descriptionAr !== undefined) updateData.description.ar = descriptionAr;
+    }
 
     // Handle supported languages
     if (supportedLanguages) {
@@ -153,6 +201,8 @@ const updatePDF = async (req, res) => {
       updateData.fileName = req.files.pdf[0].originalname;
     }
 
+    console.log('[PDF Update] Update data:', updateData);
+
     const updatedPDF = await PDFService.updatePDF(id, updateData, newPdfPath, newCoverPath);
     res.status(200).json({ success: true, data: updatedPDF });
   } catch (error) {
@@ -176,5 +226,6 @@ module.exports = {
   getAllPDFsForDashboard,
   downloadPDF,
   updatePDF,
-  deletePDF
+  deletePDF,
+  migratePDFs
 };
