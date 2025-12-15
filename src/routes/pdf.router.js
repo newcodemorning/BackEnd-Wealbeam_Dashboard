@@ -1,56 +1,72 @@
 const express = require('express');
 const router = express.Router();
 const { authenticateUser, authorizeRole } = require('../common/middleware/auth');
-const { uploadPDF, getAllPDFs, downloadPDF, updatePDF, deletePDF } = require('../controllers/pdf.controller');
-const multer = require('multer');
-const path = require('path');
+const {
+  uploadPDF,
+  getAllPDFs,
+  getAllPDFsForDashboard,
+  downloadPDF,
+  updatePDF,
+  deletePDF
+} = require('../controllers/pdf.controller');
+const { upload } = require('../middleware/uploadMiddleware');
 
-// Multer configuration using memory storage
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB limit
-  fileFilter: (req, file, cb) => {
-    if (path.extname(file.originalname).toLowerCase() === '.pdf') {
-      cb(null, true);
-    } else {
-      cb(new Error('Only PDF   files are allowed!'), false);
-    }
-  }
-}).single('pdf');
+// Configure multer to accept PDF and cover image
+const pdfUpload = upload.fields([
+  { name: 'pdf', maxCount: 1 },
+  { name: 'coverImage', maxCount: 1 }
+]);
 
 router.post(
   '/upload',
   authenticateUser,
-  authorizeRole(['super-admin','school']),
-  upload,
+  authorizeRole(['super-admin', 'school']),
+  (req, res, next) => {
+    req.meta = { type: 'pdfs' };
+    next();
+  },
+  pdfUpload,
   uploadPDF
+);
+
+// Dashboard route - get all PDFs without filtering (admin only)
+router.get(
+  '/dashboard',
+  authenticateUser,
+  authorizeRole(['super-admin', 'school']),
+  getAllPDFsForDashboard
 );
 
 router.get(
   '/',
   authenticateUser,
-  authorizeRole(['parent', 'super-admin','student']),
+  authorizeRole(['parent', 'super-admin', 'student', 'teacher', 'school']),
   getAllPDFs
 );
 
 router.get(
   '/download/:id',
   authenticateUser,
-  authorizeRole(['parent', 'super-admin', 'student']),
+  authorizeRole(['parent', 'super-admin', 'student', 'teacher', 'school']),
   downloadPDF
 );
 
 router.put(
   '/:id',
   authenticateUser,
-  authorizeRole(['super-admin','school']),
+  authorizeRole(['super-admin', 'school']),
+  (req, res, next) => {
+    req.meta = { type: 'pdfs' };
+    next();
+  },
+  pdfUpload,
   updatePDF
 );
 
 router.delete(
   '/:id',
   authenticateUser,
-  authorizeRole(['super-admin','school']),
+  authorizeRole(['super-admin', 'school']),
   deletePDF
 );
 
