@@ -95,10 +95,19 @@ const uploadPDF = async (req, res) => {
 const getAllPDFsForDashboard = async (req, res) => {
   try {
     const lang = req.lang || 'en';
-    const pdfs = await PDFService.getAllPDFsForDashboard(lang);
+    const { page, limit, skip, sort, filter } = req.pagination;
+
+    const total = await PDFService.countAllPDFs(filter);
+    const pdfs = await PDFService.getAllPDFsForDashboard(lang, filter, skip, limit, sort);
+
     res.status(200).json({
       success: true,
-      count: pdfs.length,
+      page,
+      limit,
+      total,
+      pageCount: Math.ceil(total / limit),
+      nextPage: page < Math.ceil(total / limit) ? page + 1 : null,
+      prevPage: page > 1 ? page - 1 : null,
       data: pdfs
     });
   } catch (error) {
@@ -109,8 +118,21 @@ const getAllPDFsForDashboard = async (req, res) => {
 const getAllPDFs = async (req, res) => {
   try {
     const lang = req.lang || 'en';
-    const pdfs = await PDFService.getAllPDFs(req.user.role, req.user.id, lang);
-    res.status(200).json({ success: true, data: pdfs });
+    const { page, limit, skip, sort, filter } = req.pagination;
+
+    const total = await PDFService.countPDFs(req.user.role, req.user.id, filter);
+    const pdfs = await PDFService.getAllPDFs(req.user.role, req.user.id, lang, filter, skip, limit, sort);
+
+    res.status(200).json({
+      success: true,
+      page,
+      limit,
+      total,
+      pageCount: Math.ceil(total / limit),
+      nextPage: page < Math.ceil(total / limit) ? page + 1 : null,
+      prevPage: page > 1 ? page - 1 : null,
+      data: pdfs
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -210,11 +232,44 @@ const updatePDF = async (req, res) => {
   }
 };
 
+const getPDFForAdminById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const pdf = await PDFService.getPDFForAdminById(id);
+
+    if (!pdf) {
+      return res.status(404).json({
+        success: false,
+        message: 'PDF not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: pdf
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 const deletePDF = async (req, res) => {
   try {
     const { id } = req.params;
     const result = await PDFService.deletePDF(id);
     res.status(200).json({ success: true, ...result });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const getFilterOptions = async (req, res) => {
+  try {
+    const filterOptions = await PDFService.getFilterOptions();
+    res.status(200).json({ success: true, data: filterOptions });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -227,5 +282,7 @@ module.exports = {
   downloadPDF,
   updatePDF,
   deletePDF,
-  migratePDFs
+  migratePDFs,
+  getPDFForAdminById,
+  getFilterOptions
 };

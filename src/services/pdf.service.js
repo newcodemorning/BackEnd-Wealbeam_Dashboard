@@ -96,9 +96,9 @@ class PDFService {
     }
   }
 
-  static async getAllPDFs(userRole, userId, lang = 'en') {
+  static async getAllPDFs(userRole, userId, lang = 'en', filter = {}, skip = 0, limit = 10, sort = { uploadedAt: -1 }) {
     try {
-      let query = { isVisible: true };
+      let query = { isVisible: true, ...filter };
 
       // If user is a student, filter by their school
       if (userRole === 'student') {
@@ -134,7 +134,9 @@ class PDFService {
         .populate('uploadedBy', 'email')
         .populate('targetSchools', 'schoolName')
         .select('-__v')
-        .sort({ uploadedAt: -1 })
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
         .lean();
 
       // Build full URLs for files
@@ -158,13 +160,55 @@ class PDFService {
     }
   }
 
-  static async getAllPDFsForDashboard(lang = 'en') {
+  static async countPDFs(userRole, userId, filter = {}) {
     try {
-      const pdfs = await PDF.find()
+      let query = { isVisible: true, ...filter };
+
+      // If user is a student, filter by their school
+      if (userRole === 'student') {
+        const student = await Student.findOne({ user: userId }).select('school');
+        if (!student || !student.school) {
+          throw new Error('Student school not found');
+        }
+
+        query.$or = [
+          { isPublic: true },
+          { targetSchools: student.school }
+        ];
+      }
+
+      // If user is a parent, get their children's schools
+      if (userRole === 'parent') {
+        const Parent = require('../models/parent.model');
+        const parent = await Parent.findOne({ user: userId }).populate('students', 'school');
+
+        if (parent && parent.students && parent.students.length > 0) {
+          const schoolIds = [...new Set(parent.students.map(s => s.school).filter(Boolean))];
+
+          query.$or = [
+            { isPublic: true },
+            { targetSchools: { $in: schoolIds } }
+          ];
+        } else {
+          query.isPublic = true;
+        }
+      }
+
+      return await PDF.countDocuments(query);
+    } catch (error) {
+      throw new Error(`Failed to count PDFs: ${error.message}`);
+    }
+  }
+
+  static async getAllPDFsForDashboard(lang = 'en', filter = {}, skip = 0, limit = 10, sort = { uploadedAt: -1 }) {
+    try {
+      const pdfs = await PDF.find(filter)
         .populate('uploadedBy', 'email')
         .populate('targetSchools', 'schoolName')
         .select('-__v')
-        .sort({ uploadedAt: -1 })
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
         .lean();
 
       // Build full URLs for files
@@ -174,8 +218,6 @@ class PDFService {
 
       return pdfs.map(pdf => ({
         ...pdf,
-        title: this._localize(pdf.title, lang),
-        description: this._localize(pdf.description, lang),
         filePath: pdf.filePath && !pdf.filePath.startsWith('http')
           ? `${EnvBaseURL}/${pdf.filePath}`
           : pdf.filePath,
@@ -185,6 +227,47 @@ class PDFService {
       }));
     } catch (error) {
       throw new Error(`Failed to get PDFs for dashboard: ${error.message}`);
+    }
+  }
+
+  static async countAllPDFs(filter = {}) {
+    try {
+      return await PDF.countDocuments(filter);
+    } catch (error) {
+      throw new Error(`Failed to count all PDFs: ${error.message}`);
+    }
+  }
+
+  static async getFilterOptions() {
+    try {
+      const supportedLanguages = await PDF.distinct('supportedLanguages');
+      const targetSchools = await PDF.distinct('targetSchools');
+      const uploaders = await PDF.distinct('uploadedBy');
+
+      const School = require('../models/school.model');
+      const User = require('../models/user.model');
+
+      const schools = targetSchools.length > 0
+        ? await School.find({ _id: { $in: targetSchools } })
+          .select('_id schoolName')
+          .lean()
+        : [];
+
+      const users = uploaders.length > 0
+        ? await User.find({ _id: { $in: uploaders } })
+          .select('_id email')
+          .lean()
+        : [];
+
+      return {
+        supportedLanguages: [...new Set(supportedLanguages.flat())],
+        targetSchools: schools,
+        uploaders: users,
+        visibilityOptions: ['visible', 'hidden'],
+        publicOptions: ['public', 'private']
+      };
+    } catch (error) {
+      throw new Error(`Failed to get filter options: ${error.message}`);
     }
   }
 
@@ -260,6 +343,37 @@ class PDFService {
       };
     } catch (error) {
       throw new Error(`Failed to get PDF: ${error.message}`);
+    }
+  }
+
+  static async getPDFForAdminById(id) {
+    try {
+      const pdf = await PDF.findById(id)
+        .populate('uploadedBy', 'email')
+        .populate('targetSchools', 'schoolName')
+        .select('-__v')
+        .lean();
+
+      if (!pdf) {
+        throw new Error('PDF not found');
+      }
+
+      // Build full URLs for files
+      const EnvBaseURL = process.env.ENVIRONMENT === 'production'
+        ? process.env.PROD_BASE_URL
+        : process.env.DEV_BASE_URL;
+
+      return {
+        ...pdf,
+        filePath: pdf.filePath && !pdf.filePath.startsWith('http')
+          ? `${EnvBaseURL}/${pdf.filePath}`
+          : pdf.filePath,
+        coverImage: pdf.coverImage && !pdf.coverImage.startsWith('http')
+          ? `${EnvBaseURL}/${pdf.coverImage}`
+          : pdf.coverImage
+      };
+    } catch (error) {
+      throw new Error(`Failed to get PDF for admin: ${error.message}`);
     }
   }
 

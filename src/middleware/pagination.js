@@ -15,24 +15,33 @@ const pagination = ({ defaultLimit = 5, maxLimit = 50, allowedFilters = [] } = {
 
         const filter = {};
 
-         allowedFilters.forEach(f => {
+        allowedFilters.forEach(f => {
             if (f === 'search' && req.query.search !== undefined) {
                 const raw = String(req.query.search || '').trim();
                 if (raw.length > 0) {
-                     const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                     const re = new RegExp(escapeRegex(raw), 'i');
 
-                     filter.$or = [
+                    // For PDFs, search in title (multilingual), description, and fileName
+                    filter.$or = [
                         { 'title.en': re },
                         { 'title.ar': re },
-                        { 'content.en': re },
-                        { 'content.ar': re },
-                        { tags: re },
-                        { category: re },
-                        { subcategory: re },
-                        { slug: re },
+                        { 'description.en': re },
+                        { 'description.ar': re },
+                        { fileName: re },
+                        { supportedLanguages: re }
                     ];
                 }
+            } else if (f === 'isVisible' && req.query.isVisible !== undefined) {
+                filter.isVisible = req.query.isVisible === 'true';
+            } else if (f === 'isPublic' && req.query.isPublic !== undefined) {
+                filter.isPublic = req.query.isPublic === 'true';
+            } else if (f === 'uploadedBy' && req.query.uploadedBy) {
+                filter.uploadedBy = req.query.uploadedBy;
+            } else if (f === 'targetSchools' && req.query.targetSchools) {
+                filter.targetSchools = { $in: req.query.targetSchools.split(',') };
+            } else if (f === 'supportedLanguages' && req.query.supportedLanguages) {
+                filter.supportedLanguages = { $in: req.query.supportedLanguages.split(',') };
             } else {
                 if (req.query[f] !== undefined) {
                     filter[f] = req.query[f];
