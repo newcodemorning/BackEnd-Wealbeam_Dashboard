@@ -120,7 +120,12 @@ const getAllPDFs = async (req, res) => {
     const lang = req.lang || 'en';
     const { page, limit, skip, sort, filter } = req.pagination;
 
-    const total = await PDFService.countPDFs(req.user.role, req.user.id, filter);
+    const filterCount = {
+      ...filter,
+      isVisible: true,
+      isPublic: true
+    };
+    const total = await PDFService.countPDFs(req.user.role, req.user.id, filterCount);
     const pdfs = await PDFService.getAllPDFs(req.user.role, req.user.id, lang, filter, skip, limit, sort);
 
     res.status(200).json({
@@ -256,6 +261,62 @@ const getPDFForAdminById = async (req, res) => {
   }
 };
 
+const getPDFByIdPublic = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const lang = req.lang || 'en';
+
+    const pdf = await PDFService.getPDFByIdPublic(id, req.user.role, req.user.id, lang);
+
+    if (!pdf) {
+      return res.status(404).json({
+        success: false,
+        message: 'PDF not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: pdf
+    });
+  } catch (error) {
+    if (error.message === 'PDF not available' || error.message === 'Access denied to this PDF') {
+      return res.status(403).json({
+        success: false,
+        message: error.message
+      });
+    }
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+const getPDFByIdForDashboard = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const pdf = await PDFService.getPDFByIdForDashboard(id);
+
+    if (!pdf) {
+      return res.status(404).json({
+        success: false,
+        message: 'PDF not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: pdf
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 const deletePDF = async (req, res) => {
   try {
     const { id } = req.params;
@@ -284,5 +345,7 @@ module.exports = {
   deletePDF,
   migratePDFs,
   getPDFForAdminById,
-  getFilterOptions
+  getFilterOptions,
+  getPDFByIdPublic,
+  getPDFByIdForDashboard
 };

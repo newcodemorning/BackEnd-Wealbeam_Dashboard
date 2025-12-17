@@ -10,7 +10,9 @@ const {
   deletePDF,
   migratePDFs,
   getPDFForAdminById,
-  getFilterOptions
+  getFilterOptions,
+  getPDFByIdPublic,
+  getPDFByIdForDashboard
 } = require('../controllers/pdf.controller');
 const { upload } = require('../middleware/uploadMiddleware');
 const pagination = require('../middleware/pagination');
@@ -54,12 +56,29 @@ router.get(
   getFilterOptions
 );
 
-// Admin route - get single PDF with all data for editing
+// Admin route - get single PDF with all data for editing (returns both ar & en)
 router.get(
   '/admin/:id',
   authenticateUser,
   authorizeRole(['super-admin', 'school']),
   getPDFForAdminById
+);
+
+// Dashboard route - get single PDF with all language data (same as admin, kept for backward compatibility)
+// Note: This is now the same as /admin/:id - kept for backward compatibility
+router.get(
+  '/dashboard/:id',
+  authenticateUser,
+  authorizeRole(['super-admin', 'school']),
+  getPDFByIdForDashboard
+);
+
+// Public route - get single PDF by ID with language support
+router.get(
+  '/:id',
+  authenticateUser,
+  authorizeRole(['parent', 'super-admin', 'student', 'teacher', 'school']),
+  getPDFByIdPublic
 );
 
 router.get(

@@ -104,6 +104,8 @@ const checkSlugExists = async (req, res) => {
 };
 
 const getBlogById = async (req, res) => {
+
+  console.log('[Blog Controller] getBlogById called');
   try {
     const { id } = req.params;
     const lang = req.lang || 'en';

@@ -346,6 +346,88 @@ class PDFService {
     }
   }
 
+  static async getPDFByIdPublic(id, userRole, userId, lang = 'en') {
+    try {
+      const pdf = await PDF.findById(id)
+        .populate('uploadedBy', 'email')
+        .populate('targetSchools', 'schoolName')
+        .select('-__v')
+        .lean();
+
+      if (!pdf) {
+        throw new Error('PDF not found');
+      }
+
+      // Check visibility
+      if (!pdf.isVisible && userRole !== 'super-admin' && userRole !== 'school') {
+        throw new Error('PDF not available');
+      }
+
+      // Check access for students
+      if (userRole === 'student') {
+        const student = await Student.findOne({ user: userId }).select('school');
+        if (!student) {
+          throw new Error('Student not found');
+        }
+
+        const hasAccess = pdf.isPublic ||
+          pdf.targetSchools.some(school => school._id.toString() === student.school.toString());
+
+        if (!hasAccess) {
+          throw new Error('Access denied to this PDF');
+        }
+      }
+
+      // Check access for parents
+      if (userRole === 'parent') {
+        const Parent = require('../models/parent.model');
+        const parent = await Parent.findOne({ user: userId }).populate('students', 'school');
+
+        if (!parent) {
+          throw new Error('Parent not found');
+        }
+
+        const schoolIds = parent.students.map(s => s.school?.toString()).filter(Boolean);
+        const hasAccess = pdf.isPublic ||
+          pdf.targetSchools.some(school => schoolIds.includes(school._id.toString()));
+
+        if (!hasAccess) {
+          throw new Error('Access denied to this PDF');
+        }
+      }
+
+      // Increment view count
+      await PDF.findByIdAndUpdate(id, { $inc: { viewCount: 1 } });
+
+      // Build full URLs
+      const EnvBaseURL = process.env.ENVIRONMENT === 'production'
+        ? process.env.PROD_BASE_URL
+        : process.env.DEV_BASE_URL;
+
+      return {
+        _id: pdf._id,
+        title: this._localize(pdf.title, lang),
+        description: this._localize(pdf.description, lang),
+        fileName: pdf.fileName,
+        supportedLanguages: pdf.supportedLanguages,
+        targetSchools: pdf.targetSchools,
+        isPublic: pdf.isPublic,
+        isVisible: pdf.isVisible,
+        viewCount: (pdf.viewCount || 0) + 1,
+        uploadedBy: pdf.uploadedBy,
+        uploadedAt: pdf.uploadedAt,
+        filePath: pdf.filePath && !pdf.filePath.startsWith('http')
+          ? `${EnvBaseURL}/${pdf.filePath}`
+          : pdf.filePath,
+        coverImage: pdf.coverImage && !pdf.coverImage.startsWith('http')
+          ? `${EnvBaseURL}/${pdf.coverImage}`
+          : pdf.coverImage
+      };
+    } catch (error) {
+      throw new Error(`Failed to get PDF: ${error.message}`);
+    }
+  }
+
   static async getPDFForAdminById(id) {
     try {
       const pdf = await PDF.findById(id)
@@ -374,6 +456,37 @@ class PDFService {
       };
     } catch (error) {
       throw new Error(`Failed to get PDF for admin: ${error.message}`);
+    }
+  }
+
+  static async getPDFByIdForDashboard(id) {
+    try {
+      const pdf = await PDF.findById(id)
+        .populate('uploadedBy', 'email')
+        .populate('targetSchools', 'schoolName')
+        .select('-__v')
+        .lean();
+
+      if (!pdf) {
+        throw new Error('PDF not found');
+      }
+
+      // Build full URLs for files
+      const EnvBaseURL = process.env.ENVIRONMENT === 'production'
+        ? process.env.PROD_BASE_URL
+        : process.env.DEV_BASE_URL;
+
+      return {
+        ...pdf,
+        filePath: pdf.filePath && !pdf.filePath.startsWith('http')
+          ? `${EnvBaseURL}/${pdf.filePath}`
+          : pdf.filePath,
+        coverImage: pdf.coverImage && !pdf.coverImage.startsWith('http')
+          ? `${EnvBaseURL}/${pdf.coverImage}`
+          : pdf.coverImage
+      };
+    } catch (error) {
+      throw new Error(`Failed to get PDF for dashboard: ${error.message}`);
     }
   }
 
