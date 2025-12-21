@@ -13,15 +13,23 @@ class BlogService {
         ? process.env.PROD_BASE_URL
         : process.env.DEV_BASE_URL;
 
-      const visibilityFilter = checkLogedin
-        ? { visibility: { $in: ['private', 'both'] } }
+      const baseVisibility = checkLogedin
+        ? { visibility: { $in: ['public', 'private', 'both'] } }
         : { visibility: { $in: ['public', 'both'] } };
 
-      let combinedFilter = { ...visibilityFilter };
+      const { visibility, ...restFilter } = filter;
+      const visibilityCondition =
+        visibility === 'both'
+          ? { visibility: { $in: ['public', 'private', 'both'] } }
+          : visibility
+            ? { visibility }
+            : baseVisibility;
+
+      let combinedFilter = { ...visibilityCondition };
 
       // Handle search filter
-      if (filter.$search || filter.$searchRegex) {
-        const regex = filter.$searchRegex;
+      if (restFilter.$search || restFilter.$searchRegex) {
+        const regex = restFilter.$searchRegex;
         combinedFilter.$or = [
           { 'title.en': regex },
           { 'title.ar': regex },
@@ -31,13 +39,12 @@ class BlogService {
           { tags: regex },
           { category: regex }
         ];
-        // Remove search keys from filter
-        delete filter.$search;
-        delete filter.$searchRegex;
+        delete restFilter.$search;
+        delete restFilter.$searchRegex;
       }
 
       // Merge remaining filters
-      combinedFilter = { ...combinedFilter, ...filter };
+      combinedFilter = { ...combinedFilter, ...restFilter };
 
       const blogs = await Blog.find(combinedFilter)
         .select('title content cover attachments images slug tags category isFeatured isPinned visibility')
@@ -69,11 +76,19 @@ class BlogService {
         ? process.env.PROD_BASE_URL
         : process.env.DEV_BASE_URL;
 
-      let query = {};
+      const { visibility, ...restFilter } = filter;
+      const visibilityCondition =
+        visibility === 'both'
+          ? { visibility: { $in: ['public', 'private', 'both'] } }
+          : visibility
+            ? { visibility }
+            : {};
+
+      let query = { ...visibilityCondition };
 
       // Handle search filter
-      if (filter.$search || filter.$searchRegex) {
-        const regex = filter.$searchRegex;
+      if (restFilter.$search || restFilter.$searchRegex) {
+        const regex = restFilter.$searchRegex;
         query.$or = [
           { 'title.en': regex },
           { 'title.ar': regex },
@@ -83,12 +98,12 @@ class BlogService {
           { tags: regex },
           { category: regex }
         ];
-        delete filter.$search;
-        delete filter.$searchRegex;
+        delete restFilter.$search;
+        delete restFilter.$searchRegex;
       }
 
       // Merge remaining filters
-      query = { ...query, ...filter };
+      query = { ...query, ...restFilter };
 
       const blogs = await Blog.find(query)
         .populate('author', 'name email')
@@ -128,14 +143,22 @@ class BlogService {
 
   static async countBlogs(filter, checkLogedin) {
     try {
-      const visibilityFilter = checkLogedin
-        ? { visibility: { $in: ['private', 'both'] } }
+      const baseVisibility = checkLogedin
+        ? { visibility: { $in: ['public', 'private', 'both'] } }
         : { visibility: { $in: ['public', 'both'] } };
 
-      let combinedFilter = { ...visibilityFilter };
+      const { visibility, ...restFilter } = filter;
+      const visibilityCondition =
+        visibility === 'both'
+          ? { visibility: { $in: ['public', 'private', 'both'] } }
+          : visibility
+            ? { visibility }
+            : baseVisibility;
+
+      let combinedFilter = { ...visibilityCondition };
 
       // Handle search filter - create a copy to avoid mutating original
-      const filterCopy = { ...filter };
+      const filterCopy = { ...restFilter };
 
       if (filterCopy.$search || filterCopy.$searchRegex) {
         const regex = filterCopy.$searchRegex;

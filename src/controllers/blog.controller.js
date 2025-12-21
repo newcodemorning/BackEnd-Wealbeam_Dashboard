@@ -27,7 +27,7 @@ const getAllBlogsForAdmin = async (req, res) => {
   try {
     const lang = req.lang || 'en';
     const { page, limit, skip, sort, filter } = req.pagination;
-    const total = await BlogService.countBlogs(filter);
+    const total = await BlogService.countBlogs(filter, true); // force include all visibilities
     const blogs = await BlogService.getAdminBlogs(lang, filter, skip, limit, sort);
     res.status(200).json({
       success: true,
