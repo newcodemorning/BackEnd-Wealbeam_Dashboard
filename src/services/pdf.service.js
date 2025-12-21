@@ -17,52 +17,120 @@ class PDFService {
       let migrated = 0;
       let skipped = 0;
 
+      // Default values
+      const DEFAULT_COVER_IMAGE = "https://api.weallbeamtogether.co.uk/uploads/pdfs/2025/12/21/images/FILE_book_20251221_1766324532414_798.jpg";
+      const DEFAULT_SUPPORTED_LANGUAGES = ['en'];
+      const DEFAULT_IS_VISIBLE = true;
+      const DEFAULT_IS_PUBLIC = true;
+      const DEFAULT_VIEW_COUNT = 0;
+      const DEFAULT_TARGET_SCHOOLS = [];
+
       for (const pdf of allPDFs) {
         const updates = {};
+        let hasChanges = false;
 
-        // Check if title needs migration (is a string instead of object)
+        // Check and migrate title
         if (typeof pdf.title === 'string') {
           updates.title = {
             en: pdf.title,
             ar: pdf.title
           };
+          hasChanges = true;
           console.log(`[PDF Migration] Title to migrate: "${pdf.title}"`);
         } else if (!pdf.title || !pdf.title.en) {
-          // If title is an object but missing 'en' property
           const titleValue = typeof pdf.title === 'object' ? (pdf.title.ar || '') : '';
           updates.title = {
             en: titleValue,
             ar: titleValue
           };
+          hasChanges = true;
           console.log(`[PDF Migration] Title object missing 'en': fixing`);
         }
 
-        // Check if description needs migration (is a string instead of object)
+        // Check and migrate description
         if (typeof pdf.description === 'string') {
           updates.description = {
             en: pdf.description,
             ar: pdf.description
           };
+          hasChanges = true;
           console.log(`[PDF Migration] Description to migrate: "${pdf.description}"`);
         } else if (!pdf.description) {
-          // If description is null/undefined
           updates.description = {
             en: '',
             ar: ''
           };
+          hasChanges = true;
         } else if (typeof pdf.description === 'object' && !pdf.description.en) {
-          // If description is an object but missing 'en' property
           const descValue = pdf.description.ar || '';
           updates.description = {
             en: descValue,
             ar: descValue
           };
+          hasChanges = true;
         }
 
-        if (Object.keys(updates).length > 0) {
+        // Check and set coverImage
+        if (!pdf.coverImage || pdf.coverImage === null || pdf.coverImage === '') {
+          updates.coverImage = DEFAULT_COVER_IMAGE;
+          hasChanges = true;
+          console.log(`[PDF Migration] Setting default cover image for PDF: ${pdf._id}`);
+        }
+
+        // Check and set supportedLanguages
+        if (!pdf.supportedLanguages || !Array.isArray(pdf.supportedLanguages) || pdf.supportedLanguages.length === 0) {
+          updates.supportedLanguages = DEFAULT_SUPPORTED_LANGUAGES;
+          hasChanges = true;
+          console.log(`[PDF Migration] Setting default supported languages for PDF: ${pdf._id}`);
+        }
+
+        // Check and set isVisible
+        if (pdf.isVisible === undefined || pdf.isVisible === null) {
+          updates.isVisible = DEFAULT_IS_VISIBLE;
+          hasChanges = true;
+          console.log(`[PDF Migration] Setting default isVisible for PDF: ${pdf._id}`);
+        }
+
+        // Check and set isPublic
+        if (pdf.isPublic === undefined || pdf.isPublic === null) {
+          updates.isPublic = DEFAULT_IS_PUBLIC;
+          hasChanges = true;
+          console.log(`[PDF Migration] Setting default isPublic for PDF: ${pdf._id}`);
+        }
+
+        // Check and set viewCount
+        if (pdf.viewCount === undefined || pdf.viewCount === null || pdf.viewCount < 0) {
+          updates.viewCount = DEFAULT_VIEW_COUNT;
+          hasChanges = true;
+          console.log(`[PDF Migration] Setting default viewCount for PDF: ${pdf._id}`);
+        }
+
+        // Check and set targetSchools
+        if (!pdf.targetSchools || !Array.isArray(pdf.targetSchools)) {
+          updates.targetSchools = DEFAULT_TARGET_SCHOOLS;
+          hasChanges = true;
+          console.log(`[PDF Migration] Setting default targetSchools for PDF: ${pdf._id}`);
+        }
+
+        // Check and set fileName
+        if (!pdf.fileName || pdf.fileName === '') {
+          // Extract filename from filePath if possible
+          if (pdf.filePath) {
+            const pathParts = pdf.filePath.split('/');
+            updates.fileName = pathParts[pathParts.length - 1] || 'untitled.pdf';
+          } else {
+            updates.fileName = 'untitled.pdf';
+          }
+          hasChanges = true;
+          console.log(`[PDF Migration] Setting default fileName for PDF: ${pdf._id}`);
+        }
+
+        // Perform update if there are changes
+        if (hasChanges) {
           await PDF.findByIdAndUpdate(pdf._id, { $set: updates });
           migrated++;
-          console.log(`[PDF Migration] Migrated PDF: ${pdf._id} - "${pdf.title}"`);
+          console.log(`[PDF Migration] Migrated PDF: ${pdf._id} - "${pdf.title || 'untitled'}"`);
+          console.log(`[PDF Migration] Applied updates:`, Object.keys(updates));
         } else {
           skipped++;
         }
@@ -74,7 +142,17 @@ class PDFService {
         migrated,
         skipped,
         total: allPDFs.length,
-        message: `Migrated ${migrated} PDFs, skipped ${skipped} already migrated PDFs`
+        message: `Migrated ${migrated} PDFs, skipped ${skipped} already migrated PDFs`,
+        details: {
+          defaultsApplied: {
+            coverImage: DEFAULT_COVER_IMAGE,
+            supportedLanguages: DEFAULT_SUPPORTED_LANGUAGES,
+            isVisible: DEFAULT_IS_VISIBLE,
+            isPublic: DEFAULT_IS_PUBLIC,
+            viewCount: DEFAULT_VIEW_COUNT,
+            targetSchools: DEFAULT_TARGET_SCHOOLS
+          }
+        }
       };
     } catch (error) {
       console.error('[PDF Migration] Error:', error);

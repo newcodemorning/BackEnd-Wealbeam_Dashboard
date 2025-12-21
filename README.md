@@ -1,3 +1,32 @@
+### Release [5.10.8]
+
+`update time : 2025-01-22`
+
+#### Technical Updates
+
+- Enhanced PDF migration to set default values for all missing fields
+- Migration now handles: coverImage, supportedLanguages, isVisible, isPublic, viewCount, targetSchools, fileName
+- Improved filter handling in pagination middleware for boolean and array fields
+- Fixed route ordering in blog and PDF routers to prevent path conflicts
+- Added comprehensive logging for debugging filter issues
+
+#### Description
+
+> **Enhanced PDF Migration**  
+> The migration function now sets default values for all fields that might be missing:
+>
+> - **coverImage**: Sets default book image if null/empty
+> - **supportedLanguages**: Defaults to `['en']` if missing
+> - **isVisible**: Defaults to `true` if not set
+> - **isPublic**: Defaults to `true` if not set
+> - **viewCount**: Defaults to `0` if missing or negative
+> - **targetSchools**: Defaults to empty array `[]` if not set
+> - **fileName**: Extracts from filePath or sets to 'untitled.pdf'
+>
+> Run migration: `POST /pdf/migrate/temp/data` (super-admin only)
+
+---
+
 ### Release [5.10.7]
 
 `update time : 2025-01-21`

@@ -19,7 +19,7 @@ const pdfSchema = new mongoose.Schema({
   },
   coverImage: {
     type: String,
-    default: null
+    default: "https://api.weallbeamtogether.co.uk/uploads/pdfs/2025/12/21/images/FILE_book_20251221_1766324532414_798.jpg"
   },
   supportedLanguages: {
     type: [String],
