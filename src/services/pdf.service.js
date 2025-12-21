@@ -98,7 +98,25 @@ class PDFService {
 
   static async getAllPDFs(userRole, userId, lang = 'en', filter = {}, skip = 0, limit = 10, sort = { uploadedAt: -1 }) {
     try {
-      let query = { isVisible: true, ...filter };
+      let query = { isVisible: true };
+
+      // Handle search filter
+      if (filter.$search || filter.$searchRegex) {
+        const regex = filter.$searchRegex;
+        query.$or = [
+          { 'title.en': regex },
+          { 'title.ar': regex },
+          { 'description.en': regex },
+          { 'description.ar': regex },
+          { fileName: regex }
+        ];
+        // Remove search keys from filter
+        delete filter.$search;
+        delete filter.$searchRegex;
+      }
+
+      // Merge remaining filters
+      query = { ...query, ...filter };
 
       // If user is a student, filter by their school
       if (userRole === 'student') {
@@ -107,10 +125,16 @@ class PDFService {
           throw new Error('Student school not found');
         }
 
-        query.$or = [
-          { isPublic: true },
-          { targetSchools: student.school }
+        query.$and = [
+          query.$or ? { $or: query.$or } : {},
+          {
+            $or: [
+              { isPublic: true },
+              { targetSchools: student.school }
+            ]
+          }
         ];
+        delete query.$or;
       }
 
       // If user is a parent, get their children's schools
@@ -121,10 +145,16 @@ class PDFService {
         if (parent && parent.students && parent.students.length > 0) {
           const schoolIds = [...new Set(parent.students.map(s => s.school).filter(Boolean))];
 
-          query.$or = [
-            { isPublic: true },
-            { targetSchools: { $in: schoolIds } }
+          query.$and = [
+            query.$or ? { $or: query.$or } : {},
+            {
+              $or: [
+                { isPublic: true },
+                { targetSchools: { $in: schoolIds } }
+              ]
+            }
           ];
+          delete query.$or;
         } else {
           query.isPublic = true;
         }

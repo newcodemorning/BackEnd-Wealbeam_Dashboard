@@ -17,10 +17,30 @@ class BlogService {
         ? { visibility: { $in: ['private', 'both'] } }
         : { visibility: { $in: ['public', 'both'] } };
 
-      const combinedFilter = { ...filter, ...visibilityFilter };
+      let combinedFilter = { ...visibilityFilter };
+
+      // Handle search filter
+      if (filter.$search || filter.$searchRegex) {
+        const regex = filter.$searchRegex;
+        combinedFilter.$or = [
+          { 'title.en': regex },
+          { 'title.ar': regex },
+          { 'content.en': regex },
+          { 'content.ar': regex },
+          { slug: regex },
+          { tags: regex },
+          { category: regex }
+        ];
+        // Remove search keys from filter
+        delete filter.$search;
+        delete filter.$searchRegex;
+      }
+
+      // Merge remaining filters
+      combinedFilter = { ...combinedFilter, ...filter };
 
       const blogs = await Blog.find(combinedFilter)
-        .select('title content cover attachments images slug tags category isFeatured isPinned  visibility ')
+        .select('title content cover attachments images slug tags category isFeatured isPinned visibility')
         .skip(skip)
         .limit(limit)
         .sort(sort)
@@ -48,7 +68,29 @@ class BlogService {
       const EnvBaseURL = process.env.ENVIRONMENT === 'production'
         ? process.env.PROD_BASE_URL
         : process.env.DEV_BASE_URL;
-      const blogs = await Blog.find(filter)
+
+      let query = {};
+
+      // Handle search filter
+      if (filter.$search || filter.$searchRegex) {
+        const regex = filter.$searchRegex;
+        query.$or = [
+          { 'title.en': regex },
+          { 'title.ar': regex },
+          { 'content.en': regex },
+          { 'content.ar': regex },
+          { slug: regex },
+          { tags: regex },
+          { category: regex }
+        ];
+        delete filter.$search;
+        delete filter.$searchRegex;
+      }
+
+      // Merge remaining filters
+      query = { ...query, ...filter };
+
+      const blogs = await Blog.find(query)
         .populate('author', 'name email')
         .skip(skip)
         .limit(limit)
@@ -90,7 +132,27 @@ class BlogService {
         ? { visibility: { $in: ['private', 'both'] } }
         : { visibility: { $in: ['public', 'both'] } };
 
-      const combinedFilter = { ...filter, ...visibilityFilter };
+      let combinedFilter = { ...visibilityFilter };
+
+      // Handle search filter
+      if (filter.$search || filter.$searchRegex) {
+        const regex = filter.$searchRegex;
+        combinedFilter.$or = [
+          { 'title.en': regex },
+          { 'title.ar': regex },
+          { 'content.en': regex },
+          { 'content.ar': regex },
+          { slug: regex },
+          { tags: regex },
+          { category: regex }
+        ];
+        delete filter.$search;
+        delete filter.$searchRegex;
+      }
+
+      // Merge remaining filters
+      combinedFilter = { ...combinedFilter, ...filter };
+
       return await Blog.countDocuments(combinedFilter);
     } catch (error) {
       throw new Error(`Failed to count Blogs: ${error.message}`);

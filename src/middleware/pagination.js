@@ -22,15 +22,9 @@ const pagination = ({ defaultLimit = 5, maxLimit = 50, allowedFilters = [] } = {
                     const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                     const re = new RegExp(escapeRegex(raw), 'i');
 
-                    // For PDFs, search in title (multilingual), description, and fileName
-                    filter.$or = [
-                        { 'title.en': re },
-                        { 'title.ar': re },
-                        { 'description.en': re },
-                        { 'description.ar': re },
-                        { fileName: re },
-                        { supportedLanguages: re }
-                    ];
+                    // Store search term for service to handle
+                    filter.$search = raw;
+                    filter.$searchRegex = re;
                 }
             } else if (f === 'isVisible' && req.query.isVisible !== undefined) {
                 filter.isVisible = req.query.isVisible === 'true';
@@ -39,11 +33,23 @@ const pagination = ({ defaultLimit = 5, maxLimit = 50, allowedFilters = [] } = {
             } else if (f === 'uploadedBy' && req.query.uploadedBy) {
                 filter.uploadedBy = req.query.uploadedBy;
             } else if (f === 'targetSchools' && req.query.targetSchools) {
-                filter.targetSchools = { $in: req.query.targetSchools.split(',') };
+                const schools = req.query.targetSchools.split(',').map(s => s.trim()).filter(Boolean);
+                if (schools.length > 0) {
+                    filter.targetSchools = { $in: schools };
+                }
             } else if (f === 'supportedLanguages' && req.query.supportedLanguages) {
-                filter.supportedLanguages = { $in: req.query.supportedLanguages.split(',') };
+                const langs = req.query.supportedLanguages.split(',').map(l => l.trim()).filter(Boolean);
+                if (langs.length > 0) {
+                    filter.supportedLanguages = { $in: langs };
+                }
+            } else if (f === 'category' && req.query.category) {
+                filter.category = req.query.category;
+            } else if (f === 'author' && req.query.author) {
+                filter.author = req.query.author;
+            } else if (f === 'visibility' && req.query.visibility) {
+                filter.visibility = req.query.visibility;
             } else {
-                if (req.query[f] !== undefined) {
+                if (req.query[f] !== undefined && req.query[f] !== '') {
                     filter[f] = req.query[f];
                 }
             }
