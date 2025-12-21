@@ -23,6 +23,14 @@ const pdfUpload = upload.fields([
   { name: 'coverImage', maxCount: 1 }
 ]);
 
+// Temporary migration route - MUST be before /:id route
+router.post(
+  '/migrate',
+  authenticateUser,
+  authorizeRole(['super-admin']),
+  migratePDFs
+);
+
 router.post(
   '/upload',
   authenticateUser,
@@ -73,6 +81,14 @@ router.get(
   getPDFByIdForDashboard
 );
 
+// Download route - must be before /:id
+router.get(
+  '/download/:id',
+  authenticateUser,
+  authorizeRole(['parent', 'super-admin', 'student', 'teacher', 'school']),
+  downloadPDF
+);
+
 // Public route - get single PDF by ID with language support
 router.get(
   '/:id',
@@ -93,13 +109,6 @@ router.get(
   getAllPDFs
 );
 
-router.get(
-  '/download/:id',
-  authenticateUser,
-  authorizeRole(['parent', 'super-admin', 'student', 'teacher', 'school']),
-  downloadPDF
-);
-
 router.put(
   '/:id',
   authenticateUser,
@@ -117,14 +126,6 @@ router.delete(
   authenticateUser,
   authorizeRole(['super-admin', 'school']),
   deletePDF
-);
-
-// Temporary migration route - remove after running once
-router.post(
-  '/migrate',
-  authenticateUser,
-  authorizeRole(['super-admin']),
-  migratePDFs
 );
 
 module.exports = router;
