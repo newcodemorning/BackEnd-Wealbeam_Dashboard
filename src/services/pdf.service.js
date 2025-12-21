@@ -19,7 +19,7 @@ class PDFService {
 
       const tempCount = await PDF.find();
 
-      console.log(`[PDF Migration] Total PDFs in database: ${tempCount.length}`);
+      // console.log(tempCount);
 
 
 
@@ -53,7 +53,7 @@ class PDFService {
       }
 
       console.log(`[PDF Migration] Successfully migrated ${migrated} PDFs`);
-      return { success: true, migrated };
+      return { success: true, migrated, data: tempCount };
     } catch (error) {
       console.error('[PDF Migration] Error:', error);
       throw new Error(`Migration failed: ${error.message}`);
