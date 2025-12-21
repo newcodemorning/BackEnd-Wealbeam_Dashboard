@@ -9,51 +9,73 @@ class PDFService {
     try {
       console.log('[PDF Migration] Starting migration of old PDFs to multilingual format...');
 
-      // Find PDFs with old string format (title is string, not object)
-      const oldPDFs = await PDF.find({
-        $or: [
-          { 'title.en': { $exists: false } },
-          { 'description.en': { $exists: false } }
-        ]
-      });
+      // Find all PDFs to check their structure
+      const allPDFs = await PDF.find().lean();
 
-      const tempCount = await PDF.find();
-
-      // console.log(tempCount);
-
-
-
-      console.log(`[PDF Migration] Found ${oldPDFs.length} PDFs to migrate`);
+      console.log(`[PDF Migration] Found ${allPDFs.length} total PDFs to check`);
 
       let migrated = 0;
-      for (const pdf of oldPDFs) {
+      let skipped = 0;
+
+      for (const pdf of allPDFs) {
         const updates = {};
 
-        // Migrate title
+        // Check if title needs migration (is a string instead of object)
         if (typeof pdf.title === 'string') {
           updates.title = {
             en: pdf.title,
             ar: pdf.title
           };
+          console.log(`[PDF Migration] Title to migrate: "${pdf.title}"`);
+        } else if (!pdf.title || !pdf.title.en) {
+          // If title is an object but missing 'en' property
+          const titleValue = typeof pdf.title === 'object' ? (pdf.title.ar || '') : '';
+          updates.title = {
+            en: titleValue,
+            ar: titleValue
+          };
+          console.log(`[PDF Migration] Title object missing 'en': fixing`);
         }
 
-        // Migrate description
-        if (typeof pdf.description === 'string' || !pdf.description) {
+        // Check if description needs migration (is a string instead of object)
+        if (typeof pdf.description === 'string') {
           updates.description = {
-            en: pdf.description || '',
-            ar: pdf.description || ''
+            en: pdf.description,
+            ar: pdf.description
+          };
+          console.log(`[PDF Migration] Description to migrate: "${pdf.description}"`);
+        } else if (!pdf.description) {
+          // If description is null/undefined
+          updates.description = {
+            en: '',
+            ar: ''
+          };
+        } else if (typeof pdf.description === 'object' && !pdf.description.en) {
+          // If description is an object but missing 'en' property
+          const descValue = pdf.description.ar || '';
+          updates.description = {
+            en: descValue,
+            ar: descValue
           };
         }
 
         if (Object.keys(updates).length > 0) {
           await PDF.findByIdAndUpdate(pdf._id, { $set: updates });
           migrated++;
-          console.log(`[PDF Migration] Migrated PDF: ${pdf._id}`);
+          console.log(`[PDF Migration] Migrated PDF: ${pdf._id} - "${pdf.title}"`);
+        } else {
+          skipped++;
         }
       }
 
-      console.log(`[PDF Migration] Successfully migrated ${migrated} PDFs`);
-      return { success: true, migrated, data: tempCount };
+      console.log(`[PDF Migration] Successfully migrated ${migrated} PDFs, skipped ${skipped} PDFs`);
+      return {
+        success: true,
+        migrated,
+        skipped,
+        total: allPDFs.length,
+        message: `Migrated ${migrated} PDFs, skipped ${skipped} already migrated PDFs`
+      };
     } catch (error) {
       console.error('[PDF Migration] Error:', error);
       throw new Error(`Migration failed: ${error.message}`);

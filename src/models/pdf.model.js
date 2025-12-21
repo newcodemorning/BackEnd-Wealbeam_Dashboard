@@ -2,12 +2,12 @@ const mongoose = require('mongoose');
 
 const pdfSchema = new mongoose.Schema({
   title: {
-    en: { type: String, required: true },
-    ar: { type: String, required: true }
+    type: mongoose.Schema.Types.Mixed, // Allow both string and object during migration
+    required: true
   },
   description: {
-    en: { type: String, default: '' },
-    ar: { type: String, default: '' }
+    type: mongoose.Schema.Types.Mixed, // Allow both string and object during migration
+    default: { en: '', ar: '' }
   },
   fileName: {
     type: String,
