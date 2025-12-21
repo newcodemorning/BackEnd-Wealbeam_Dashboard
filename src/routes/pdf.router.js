@@ -25,7 +25,7 @@ const pdfUpload = upload.fields([
 
 // Temporary migration route - MUST be before /:id route
 router.post(
-  '/migrate',
+  '/migrate/temp/data',
   authenticateUser,
   authorizeRole(['super-admin']),
   migratePDFs

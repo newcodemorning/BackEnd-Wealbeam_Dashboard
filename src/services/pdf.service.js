@@ -17,6 +17,12 @@ class PDFService {
         ]
       });
 
+      const tempCount = await PDF.find();
+
+      console.log(`[PDF Migration] Total PDFs in database: ${tempCount.length}`);
+
+
+
       console.log(`[PDF Migration] Found ${oldPDFs.length} PDFs to migrate`);
 
       let migrated = 0;
