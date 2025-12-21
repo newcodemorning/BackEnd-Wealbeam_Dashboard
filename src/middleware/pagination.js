@@ -16,44 +16,84 @@ const pagination = ({ defaultLimit = 5, maxLimit = 50, allowedFilters = [] } = {
         const filter = {};
 
         allowedFilters.forEach(f => {
+            // Search filter - special handling
             if (f === 'search' && req.query.search !== undefined) {
                 const raw = String(req.query.search || '').trim();
                 if (raw.length > 0) {
                     const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                     const re = new RegExp(escapeRegex(raw), 'i');
-
-                    // Store search term for service to handle
                     filter.$search = raw;
                     filter.$searchRegex = re;
                 }
-            } else if (f === 'isVisible' && req.query.isVisible !== undefined) {
-                filter.isVisible = req.query.isVisible === 'true';
-            } else if (f === 'isPublic' && req.query.isPublic !== undefined) {
-                filter.isPublic = req.query.isPublic === 'true';
-            } else if (f === 'uploadedBy' && req.query.uploadedBy) {
-                filter.uploadedBy = req.query.uploadedBy;
-            } else if (f === 'targetSchools' && req.query.targetSchools) {
+            }
+            // Boolean filters - explicit true/false handling
+            else if (f === 'isVisible' && req.query.isVisible !== undefined) {
+                const value = req.query.isVisible;
+                filter.isVisible = value === 'true' || value === true;
+            }
+            else if (f === 'isPublic' && req.query.isPublic !== undefined) {
+                const value = req.query.isPublic;
+                filter.isPublic = value === 'true' || value === true;
+            }
+            else if (f === 'isFeatured' && req.query.isFeatured !== undefined) {
+                const value = req.query.isFeatured;
+                filter.isFeatured = value === 'true' || value === true;
+            }
+            else if (f === 'isPinned' && req.query.isPinned !== undefined) {
+                const value = req.query.isPinned;
+                filter.isPinned = value === 'true' || value === true;
+            }
+            // Array filters - split by comma and filter empty values
+            else if (f === 'targetSchools' && req.query.targetSchools) {
                 const schools = req.query.targetSchools.split(',').map(s => s.trim()).filter(Boolean);
                 if (schools.length > 0) {
                     filter.targetSchools = { $in: schools };
                 }
-            } else if (f === 'supportedLanguages' && req.query.supportedLanguages) {
+            }
+            else if (f === 'supportedLanguages' && req.query.supportedLanguages) {
                 const langs = req.query.supportedLanguages.split(',').map(l => l.trim()).filter(Boolean);
                 if (langs.length > 0) {
                     filter.supportedLanguages = { $in: langs };
                 }
-            } else if (f === 'category' && req.query.category) {
-                filter.category = req.query.category;
-            } else if (f === 'author' && req.query.author) {
-                filter.author = req.query.author;
-            } else if (f === 'visibility' && req.query.visibility) {
-                filter.visibility = req.query.visibility;
-            } else {
-                if (req.query[f] !== undefined && req.query[f] !== '') {
-                    filter[f] = req.query[f];
+            }
+            else if (f === 'allowedSchools' && req.query.allowedSchools) {
+                const schools = req.query.allowedSchools.split(',').map(s => s.trim()).filter(Boolean);
+                if (schools.length > 0) {
+                    filter.allowedSchools = { $in: schools };
                 }
             }
+            // String filters
+            else if (f === 'uploadedBy' && req.query.uploadedBy) {
+                filter.uploadedBy = req.query.uploadedBy.trim();
+            }
+            else if (f === 'category' && req.query.category) {
+                filter.category = req.query.category.trim();
+            }
+            else if (f === 'author' && req.query.author) {
+                filter.author = req.query.author.trim();
+            }
+            else if (f === 'visibility' && req.query.visibility) {
+                const visibility = req.query.visibility.trim();
+                if (['public', 'private', 'both'].includes(visibility)) {
+                    filter.visibility = visibility;
+                }
+            }
+            else if (f === 'status' && req.query.status) {
+                const status = req.query.status.trim();
+                if (['draft', 'published'].includes(status)) {
+                    filter.status = status;
+                }
+            }
+            // Generic filter - for any other allowed filters
+            else if (req.query[f] !== undefined && req.query[f] !== '') {
+                filter[f] = req.query[f];
+            }
         });
+
+        // Log applied filters for debugging
+        if (Object.keys(filter).length > 0) {
+            console.log('[Pagination] Applied filters:', JSON.stringify(filter, null, 2));
+        }
 
         req.pagination = { page, limit, skip, sort, filter };
         next();

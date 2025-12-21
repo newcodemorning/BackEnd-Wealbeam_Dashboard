@@ -134,9 +134,11 @@ class BlogService {
 
       let combinedFilter = { ...visibilityFilter };
 
-      // Handle search filter
-      if (filter.$search || filter.$searchRegex) {
-        const regex = filter.$searchRegex;
+      // Handle search filter - create a copy to avoid mutating original
+      const filterCopy = { ...filter };
+
+      if (filterCopy.$search || filterCopy.$searchRegex) {
+        const regex = filterCopy.$searchRegex;
         combinedFilter.$or = [
           { 'title.en': regex },
           { 'title.ar': regex },
@@ -146,12 +148,12 @@ class BlogService {
           { tags: regex },
           { category: regex }
         ];
-        delete filter.$search;
-        delete filter.$searchRegex;
+        delete filterCopy.$search;
+        delete filterCopy.$searchRegex;
       }
 
       // Merge remaining filters
-      combinedFilter = { ...combinedFilter, ...filter };
+      combinedFilter = { ...combinedFilter, ...filterCopy };
 
       return await Blog.countDocuments(combinedFilter);
     } catch (error) {

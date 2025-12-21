@@ -126,11 +126,13 @@ class PDFService {
 
   static async getAllPDFs(userRole, userId, lang = 'en', filter = {}, skip = 0, limit = 10, sort = { uploadedAt: -1 }) {
     try {
+      // Clone filter to avoid mutation
+      const cleanFilter = { ...filter };
       let query = { isVisible: true };
 
       // Handle search filter
-      if (filter.$search || filter.$searchRegex) {
-        const regex = filter.$searchRegex;
+      if (cleanFilter.$search || cleanFilter.$searchRegex) {
+        const regex = cleanFilter.$searchRegex;
         query.$or = [
           { 'title.en': regex },
           { 'title.ar': regex },
@@ -138,13 +140,14 @@ class PDFService {
           { 'description.ar': regex },
           { fileName: regex }
         ];
-        // Remove search keys from filter
-        delete filter.$search;
-        delete filter.$searchRegex;
+        delete cleanFilter.$search;
+        delete cleanFilter.$searchRegex;
       }
 
       // Merge remaining filters
-      query = { ...query, ...filter };
+      query = { ...query, ...cleanFilter };
+
+      console.log('[PDF Service] Query:', JSON.stringify(query, null, 2));
 
       // If user is a student, filter by their school
       if (userRole === 'student') {
@@ -220,7 +223,12 @@ class PDFService {
 
   static async countPDFs(userRole, userId, filter = {}) {
     try {
-      let query = { isVisible: true, ...filter };
+      // Clone filter and remove search keys
+      const cleanFilter = { ...filter };
+      delete cleanFilter.$search;
+      delete cleanFilter.$searchRegex;
+
+      let query = { isVisible: true, ...cleanFilter };
 
       // If user is a student, filter by their school
       if (userRole === 'student') {
@@ -260,7 +268,30 @@ class PDFService {
 
   static async getAllPDFsForDashboard(lang = 'en', filter = {}, skip = 0, limit = 10, sort = { uploadedAt: -1 }) {
     try {
-      const pdfs = await PDF.find(filter)
+      // Clone filter to avoid mutation
+      const cleanFilter = { ...filter };
+      let query = {};
+
+      // Handle search filter
+      if (cleanFilter.$search || cleanFilter.$searchRegex) {
+        const regex = cleanFilter.$searchRegex;
+        query.$or = [
+          { 'title.en': regex },
+          { 'title.ar': regex },
+          { 'description.en': regex },
+          { 'description.ar': regex },
+          { fileName: regex }
+        ];
+        delete cleanFilter.$search;
+        delete cleanFilter.$searchRegex;
+      }
+
+      // Merge remaining filters
+      query = { ...query, ...cleanFilter };
+
+      console.log('[PDF Dashboard] Query:', JSON.stringify(query, null, 2));
+
+      const pdfs = await PDF.find(query)
         .populate('uploadedBy', 'email')
         .populate('targetSchools', 'schoolName')
         .select('-__v')
@@ -290,7 +321,28 @@ class PDFService {
 
   static async countAllPDFs(filter = {}) {
     try {
-      return await PDF.countDocuments(filter);
+      // Clone filter and remove search keys
+      const cleanFilter = { ...filter };
+      let query = {};
+
+      if (cleanFilter.$search || cleanFilter.$searchRegex) {
+        const regex = cleanFilter.$searchRegex;
+        query.$or = [
+          { 'title.en': regex },
+          { 'title.ar': regex },
+          { 'description.en': regex },
+          { 'description.ar': regex },
+          { fileName: regex }
+        ];
+        delete cleanFilter.$search;
+        delete cleanFilter.$searchRegex;
+      }
+
+      query = { ...query, ...cleanFilter };
+
+      console.log('[PDF Count] Query:', JSON.stringify(query, null, 2));
+
+      return await PDF.countDocuments(query);
     } catch (error) {
       throw new Error(`Failed to count all PDFs: ${error.message}`);
     }
