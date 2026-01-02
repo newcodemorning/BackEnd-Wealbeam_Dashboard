@@ -1,0 +1,158 @@
+{
+    "meta": {
+        "schoolId": "65f1a9c2e9a1a8",
+        "schoolName": "Al-Nour School",
+        "examType": "daily",
+        "dateRange": {
+            "from": "2026-01-01",
+            "to": "2026-01-07",
+            "daysCount": 7
+        },
+        "generatedAt": "2026-01-08T10:30:00Z"
+    },
+    "summary": {
+        "studentsCount": 120,
+        "expectedResponses": 840,
+        "actualResponses": 760,
+        "attendanceRate": 90.4,
+        "overallAverage": 3.62,
+        "riskRate": {
+            "green": 72,
+            "yellow": 19,
+            "red": 9
+        }
+    },
+    "dailyOverview": [
+        {
+            "date": "2026-01-01",
+            "average": 3.9,
+            "responses": 110,
+            "statusDistribution": {
+                "green": 78,
+                "yellow": 17,
+                "red": 5
+            }
+        },
+        {
+            "date": "2026-01-02",
+            "average": 3.4,
+            "responses": 105,
+            "statusDistribution": {
+                "green": 68,
+                "yellow": 21,
+                "red": 11
+            }
+        }
+    ],
+    "questionsTrend": [
+        {
+            "questionId": "q1",
+            "text": {
+                "ar": "كيف تشعر اليوم؟",
+                "en": "How do you feel today?"
+            },
+            "type": "slider",
+            "dailyAverage": [
+                {
+                    "date": "2026-01-01",
+                    "value": 4.1
+                },
+                {
+                    "date": "2026-01-02",
+                    "value": 3.5
+                }
+            ],
+            "overallAverage": 3.8,
+            "trend": "worsening"
+        },
+        {
+            "questionId": "q2",
+            "text": {
+                "ar": "هل تشعر بالأمان في المدرسة؟",
+                "en": "Do you feel safe at school?"
+            },
+            "type": "yesno",
+            "distribution": {
+                "yes": 82,
+                "no": 18
+            },
+            "trend": "stable"
+        }
+    ],
+    "studentsTimeline": [
+        {
+            "studentId": "st_101",
+            "name": "Ahmed Ali",
+            "class": "2B",
+            "attendanceRate": 100,
+            "dailyStatus": [
+                {
+                    "date": "2026-01-01",
+                    "average": 4.2,
+                    "status": "green"
+                },
+                {
+                    "date": "2026-01-02",
+                    "average": 2.4,
+                    "status": "red"
+                }
+            ],
+            "trend": "worsening",
+            "riskFlags": [
+                "RED_2_DAYS"
+            ]
+        },
+        {
+            "studentId": "st_102",
+            "name": "Sara Mohamed",
+            "class": "1A",
+            "attendanceRate": 43,
+            "trend": "missing",
+            "riskFlags": [
+                "MISSING_3_DAYS"
+            ]
+        }
+    ],
+    "classesOverview": [
+        {
+            "classId": "2B",
+            "studentsCount": 28,
+            "average": 3.1,
+            "riskRate": 14,
+            "status": "red"
+        },
+        {
+            "classId": "1A",
+            "studentsCount": 30,
+            "average": 4.0,
+            "riskRate": 3,
+            "status": "green"
+        }
+    ],
+    "riskAlerts": [
+        {
+            "level": "high",
+            "studentId": "st_101",
+            "studentName": "Ahmed Ali",
+            "reason": "Red status for 2 consecutive days",
+            "lastDetected": "2026-01-02"
+        },
+        {
+            "level": "medium",
+            "studentId": "st_102",
+            "studentName": "Sara Mohamed",
+            "reason": "No response for 3 days",
+            "lastDetected": "2026-01-05"
+        }
+    ],
+    "insights": [
+        "Overall decline detected on 2026-01-02",
+        "Class 2B shows continuous low performance",
+        "Question 'How do you feel today?' dropped significantly"
+    ],
+    "recommendations": [
+        "Schedule counseling session for Class 2B",
+        "Follow up individually with students marked as high risk",
+        "Investigate causes of absence on Jan 2"
+    ]
+}

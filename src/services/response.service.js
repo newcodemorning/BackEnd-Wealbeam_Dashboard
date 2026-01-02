@@ -187,6 +187,186 @@ class ResponseService {
     }
 
 
+    async getDailySchoolResponsesStatistics(schoolId, fromDay, toDay) {
+
+        /* -------------------- DATE SETUP -------------------- */
+        const start = new Date(fromDay);
+        const end = new Date(toDay);
+        end.setHours(23, 59, 59, 999);
+
+        const daysCount =
+            Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+        /* -------------------- STUDENTS -------------------- */
+        const classes = await Class.find({ school: schoolId }).select('_id');
+        const classIds = classes.map(c => c._id);
+
+        const students = await Student.find({ class: { $in: classIds } })
+            .select('_id first_name last_name class');
+
+        const studentIds = students.map(s => s._id);
+
+        /* -------------------- FORM -------------------- */
+        const form = await Form.findOne({ subject: 'daily' });
+        if (!form) throw new Error('Daily form not found');
+
+        const questionMap = {};
+        form.questions.forEach(q => {
+            questionMap[q._id.toString()] = q;
+        });
+
+        /* -------------------- RESPONSES -------------------- */
+        const responses = await Response.find({
+            student: { $in: studentIds },
+            form: form._id,
+            timestamp: { $gte: start, $lte: end }
+        }).populate('student');
+
+        /* -------------------- HELPERS -------------------- */
+        const getDayKey = d => d.toISOString().split('T')[0];
+
+        const getStatusFromAverage = avg => {
+            if (avg >= 4) return 'green';
+            if (avg >= 2.5) return 'yellow';
+            return 'red';
+        };
+
+        /* -------------------- DAILY OVERVIEW -------------------- */
+        const dailyMap = {};
+
+        responses.forEach(r => {
+            const day = getDayKey(r.timestamp);
+
+            if (!dailyMap[day]) {
+                dailyMap[day] = {
+                    totalSum: 0,
+                    totalCount: 0,
+                    responses: 0,
+                    statusDistribution: { green: 0, yellow: 0, red: 0 }
+                };
+            }
+
+            let studentSum = 0;
+            let studentCount = 0;
+
+            r.answers.forEach(a => {
+                if (a.question.type === 'slider') {
+                    const num = Number(a.answer);
+                    if (!isNaN(num)) {
+                        studentSum += num;
+                        studentCount++;
+                        dailyMap[day].totalSum += num;
+                        dailyMap[day].totalCount++;
+                    }
+                }
+            });
+
+            if (studentCount > 0) {
+                const avg = studentSum / studentCount;
+                const status = getStatusFromAverage(avg);
+                dailyMap[day].statusDistribution[status]++;
+            }
+
+            dailyMap[day].responses++;
+        });
+
+        const dailyOverview = Object.entries(dailyMap).map(([date, d]) => ({
+            date,
+            average: d.totalCount ? +(d.totalSum / d.totalCount).toFixed(2) : 0,
+            responses: d.responses,
+            statusDistribution: d.statusDistribution
+        }));
+
+        /* -------------------- SUMMARY -------------------- */
+        const expectedResponses = students.length * daysCount;
+        const actualResponses = responses.length;
+
+        const totalSum = dailyOverview.reduce((a, d) => a + d.average, 0);
+        const overallAverage =
+            dailyOverview.length ? +(totalSum / dailyOverview.length).toFixed(2) : 0;
+
+        const totalStatus = { green: 0, yellow: 0, red: 0 };
+        dailyOverview.forEach(d => {
+            totalStatus.green += d.statusDistribution.green;
+            totalStatus.yellow += d.statusDistribution.yellow;
+            totalStatus.red += d.statusDistribution.red;
+        });
+
+        const totalStatusCount =
+            totalStatus.green + totalStatus.yellow + totalStatus.red;
+
+        const riskRate = {
+            green: Math.round((totalStatus.green / totalStatusCount) * 100),
+            yellow: Math.round((totalStatus.yellow / totalStatusCount) * 100),
+            red: Math.round((totalStatus.red / totalStatusCount) * 100)
+        };
+
+        /* -------------------- STUDENTS TIMELINE -------------------- */
+        const studentMap = {};
+
+        students.forEach(s => {
+            studentMap[s._id] = {
+                studentId: s._id,
+                name: `${s.first_name} ${s.last_name}`,
+                class: s.class,
+                daysAnswered: 0,
+                dailyStatus: []
+            };
+        });
+
+        responses.forEach(r => {
+            let sum = 0, count = 0;
+
+            r.answers.forEach(a => {
+                if (a.question.type === 'slider') {
+                    const num = Number(a.answer);
+                    if (!isNaN(num)) {
+                        sum += num;
+                        count++;
+                    }
+                }
+            });
+
+            if (count > 0) {
+                const avg = +(sum / count).toFixed(2);
+                studentMap[r.student._id].daysAnswered++;
+                studentMap[r.student._id].dailyStatus.push({
+                    date: getDayKey(r.timestamp),
+                    average: avg,
+                    status: getStatusFromAverage(avg)
+                });
+            }
+        });
+
+        const studentsTimeline = Object.values(studentMap).map(s => ({
+            ...s,
+            attendanceRate: Math.round((s.daysAnswered / daysCount) * 100)
+        }));
+
+        /* -------------------- FINAL RESPONSE -------------------- */
+        return {
+            meta: {
+                schoolId,
+                examType: 'daily',
+                dateRange: { from: fromDay, to: toDay, daysCount },
+                generatedAt: new Date()
+            },
+            summary: {
+                studentsCount: students.length,
+                expectedResponses,
+                actualResponses,
+                attendanceRate: Math.round((actualResponses / expectedResponses) * 100),
+                overallAverage,
+                riskRate
+            },
+            dailyOverview,
+            // studentsTimeline
+        };
+    }
+
+
+
+
     async getSchoolResponsesStatistics(schoolId, formDay, toDay) {
         // Step 1: Find all classes and students related to this school
         const classes = await Class.find({ school: schoolId }).select('_id');
@@ -327,6 +507,9 @@ class ResponseService {
             }
         };
     }
+
+
+
 
     getStatusColor(score) {
         if (score <= 6) return 'green';
