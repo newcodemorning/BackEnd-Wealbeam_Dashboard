@@ -56,7 +56,9 @@ const uploadPDF = async (req, res) => {
 
     // Parse target schools
     const targetSchools = req.body.targetSchools
-      ? req.body.targetSchools.split(',').map(id => id.trim()).filter(Boolean)
+      ? (Array.isArray(req.body.targetSchools)
+        ? req.body.targetSchools
+        : req.body.targetSchools.split(',').map(id => id.trim()).filter(Boolean))
       : [];
 
     const isPublic = req.body.isPublic === 'true' || req.body.isPublic === true || targetSchools.length === 0;
@@ -208,7 +210,9 @@ const updatePDF = async (req, res) => {
     // Handle target schools
     if (targetSchools !== undefined) {
       updateData.targetSchools = targetSchools
-        ? targetSchools.split(',').map(id => id.trim()).filter(Boolean)
+        ? (Array.isArray(targetSchools)
+          ? targetSchools.filter(Boolean)
+          : targetSchools.split(',').map(id => id.trim()).filter(Boolean))
         : [];
     }
 
@@ -346,6 +350,9 @@ module.exports = {
   migratePDFs,
   getPDFForAdminById,
   getFilterOptions,
-  getPDFByIdPublic,
+
+
+
+};  getPDFByIdForDashboard  getPDFByIdPublic, getPDFByIdPublic,
   getPDFByIdForDashboard
 };

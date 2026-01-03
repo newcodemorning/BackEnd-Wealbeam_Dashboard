@@ -62,6 +62,13 @@
                     "value": 3.5
                 }
             ],
+            "distribution": {
+                "1": 5,
+                "2": 10,
+                "3": 15,
+                "4": 20,
+                "5": 25
+            },
             "overallAverage": 3.8,
             "trend": "worsening"
         },
@@ -116,6 +123,7 @@
     "classesOverview": [
         {
             "classId": "2B",
+            "className": "Class 2B",
             "studentsCount": 28,
             "average": 3.1,
             "riskRate": 14,
@@ -123,6 +131,7 @@
         },
         {
             "classId": "1A",
+            "className": "Class 1A",
             "studentsCount": 30,
             "average": 4.0,
             "riskRate": 3,

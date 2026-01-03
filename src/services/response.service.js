@@ -187,7 +187,7 @@ class ResponseService {
     }
 
 
-    async getDailySchoolResponsesStatistics(schoolId, fromDay, toDay) {
+    async getDailySchoolResponsesStatisticsDD(schoolId, fromDay, toDay) {
 
         /* -------------------- DATE SETUP -------------------- */
         const start = new Date(fromDay);
@@ -363,6 +363,238 @@ class ResponseService {
             // studentsTimeline
         };
     }
+
+
+    async getDailySchoolResponsesStatistics(schoolId, formDay, toDay) {
+        // 1️⃣ جلب كل الصفوف والطلاب
+        const classes = await Class.find({ school: schoolId }).select('_id ClassName');
+        const classIds = classes.map(c => c._id);
+
+        const students = await Student.find({ class: { $in: classIds } }).select('_id name class');
+        const studentIds = students.map(s => s._id);
+
+        if (formDay > toDay) throw new Error('Invalid date range');
+
+        const start = new Date(formDay);
+        const end = new Date(toDay);
+        end.setHours(23, 59, 59, 999);
+
+        async function fetchResponses(rangeStart, rangeEnd) {
+            const form = await Form.findOne({ subject: 'daily' });
+            if (!form) return [];
+
+            const questionIds = form.questions.map(q => q._id);
+
+            const responses = await Response.find({
+                student: { $in: studentIds },
+                'answers.question.id': { $in: questionIds },
+                timestamp: { $gte: rangeStart, $lte: rangeEnd }
+            }).populate('student', 'name class');
+
+            return responses;
+        }
+
+        const responses = await fetchResponses(start, end);
+
+        // 2️⃣ احسب attendanceRate و actualResponses
+        const actualResponses = responses.length;
+        const expectedResponses = students.length * Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+        const attendanceRate = parseFloat(((actualResponses / expectedResponses) * 100).toFixed(2));
+
+        // Get the form to access question details
+        const form = await Form.findOne({ subject: 'daily' });
+        const questionTextMap = {};
+        if (form) {
+            form.questions.forEach(q => {
+                questionTextMap[q._id.toString()] = q.text;
+            });
+        }
+
+        // 3️⃣ احسب riskRate لكل طالب بناءً على متوسط إجاباته
+        const studentStatus = {}; // studentId => status
+        const questionStats = {}; // لكل سؤال
+        for (const response of responses) {
+            let total = 0;
+            let count = 0;
+
+            for (const answer of response.answers) {
+                const qId = answer.question.id.toString();
+                if (!questionStats[qId]) questionStats[qId] = { type: answer.question.type, values: {} };
+                questionStats[qId].values[answer.answer] = (questionStats[qId].values[answer.answer] || 0) + 1;
+
+                if (answer.question.type === 'slider') {
+                    total += parseFloat(answer.answer);
+                    count++;
+                }
+            }
+
+            let avg = count > 0 ? total / count : 0;
+            if (avg >= 4) studentStatus[response.student._id] = 'green';
+            else if (avg >= 2) studentStatus[response.student._id] = 'yellow';
+            else studentStatus[response.student._id] = 'red';
+        }
+
+        // 4️⃣ احسب summary riskRate مع الأخذ في الحسبان الغائبين
+        let green = 0, yellow = 0, red = 0, absent = 0;
+        for (const student of students) {
+            const status = studentStatus[student._id];
+            if (!status) absent++;
+            else if (status === 'green') green++;
+            else if (status === 'yellow') yellow++;
+            else if (status === 'red') red++;
+        }
+
+        const totalStudents = students.length;
+        const riskRate = {
+            green: parseFloat(((green / totalStudents) * 100).toFixed(2)),
+            yellow: parseFloat(((yellow / totalStudents) * 100).toFixed(2)),
+            red: parseFloat(((red / totalStudents) * 100).toFixed(2)),
+            absent: parseFloat(((absent / totalStudents) * 100).toFixed(2))
+        };
+
+        // 5️⃣ احسب overallAverage لكل الاسئلة
+        const overallAverage = (() => {
+            let sum = 0, count = 0;
+            for (const q of Object.values(questionStats)) {
+                if (q.type === 'slider') {
+                    for (const [val, freq] of Object.entries(q.values)) {
+                        sum += parseFloat(val) * freq;
+                        count += freq;
+                    }
+                }
+            }
+            return count > 0 ? parseFloat((sum / count).toFixed(2)) : 0;
+        })();
+
+        // 6️⃣ بناء تقرير questionsTrend
+        const questionsTrend = Object.entries(questionStats).map(([qId, q]) => {
+            let sum = 0, count = 0;
+            for (const [val, freq] of Object.entries(q.values)) {
+                if (q.type === 'slider') {
+                    sum += parseFloat(val) * freq;
+                    count += freq;
+                }
+            }
+            return {
+                questionId: qId,
+                text: questionTextMap[qId] || { en: 'Unknown', ar: 'غير معروف' },
+                type: q.type,
+                distribution: q.values,
+                overallAverage: count > 0 ? parseFloat((sum / count).toFixed(2)) : 0
+            };
+        });
+
+        // 7️⃣ بناء تقرير classesOverview
+        const classNameMap = {};
+        classes.forEach(c => {
+            classNameMap[c._id.toString()] = c.ClassName;
+        });
+
+        const classesOverview = classes.map(c => {
+            const clsStudents = students.filter(s => s.class.equals(c._id));
+            let sum = 0, count = 0;
+            let clsRisk = 0;
+
+            for (const s of clsStudents) {
+                const status = studentStatus[s._id];
+                if (!status) clsRisk++;
+                else if (status === 'red') clsRisk++;
+                if (responses.find(r => r.student._id.equals(s._id))) {
+                    const r = responses.filter(r => r.student._id.equals(s._id))[0];
+                    let total = 0, cnt = 0;
+                    for (const a of r.answers) {
+                        if (a.question.type === 'slider') {
+                            total += parseFloat(a.answer);
+                            cnt++;
+                        }
+                    }
+                    if (cnt > 0) {
+                        sum += total / cnt;
+                        count++;
+                    }
+                }
+            }
+
+            return {
+                classId: c._id,
+                className: c.ClassName,
+                studentsCount: clsStudents.length,
+                average: count > 0 ? parseFloat((sum / count).toFixed(2)) : 0,
+                riskRate: clsRisk,
+                status: clsRisk > clsStudents.length / 2 ? 'red' : 'green'
+            };
+        });
+
+        // 8️⃣ بناء تقرير riskAlerts
+        const riskAlerts = students.filter(s => studentStatus[s._id] === 'red').map(s => ({
+            level: 'high',
+            studentId: s._id,
+            studentName: s.name,
+            reason: 'Low average or absent',
+            lastDetected: new Date()
+        }));
+
+        // 9️⃣ dailyOverview
+        const dailyOverview = [];
+        const daysCount = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+        for (let d = 0; d < daysCount; d++) {
+            const day = new Date(start);
+            day.setDate(day.getDate() + d);
+            const dayStr = day.toISOString().split('T')[0];
+            const dayResponses = responses.filter(r => r.timestamp.toISOString().startsWith(dayStr));
+            let sum = 0, cnt = 0;
+            const statusDist = { green: 0, yellow: 0, red: 0 };
+            for (const r of dayResponses) {
+                let total = 0, c = 0;
+                for (const a of r.answers) {
+                    if (a.question.type === 'slider') {
+                        total += parseFloat(a.answer);
+                        c++;
+                    }
+                }
+                if (c > 0) {
+                    const avg = total / c;
+                    if (avg >= 4) statusDist.green++;
+                    else if (avg >= 2) statusDist.yellow++;
+                    else statusDist.red++;
+                    sum += avg;
+                    cnt++;
+                }
+            }
+            dailyOverview.push({
+                date: dayStr,
+                average: cnt > 0 ? parseFloat((sum / cnt).toFixed(2)) : 0,
+                responses: dayResponses.length,
+                statusDistribution: statusDist
+            });
+        }
+
+        return {
+            meta: {
+                schoolId,
+                examType: 'daily',
+                dateRange: {
+                    from: formDay,
+                    to: toDay,
+                    daysCount
+                },
+                generatedAt: new Date().toISOString()
+            },
+            summary: {
+                studentsCount: students.length,
+                expectedResponses,
+                actualResponses,
+                attendanceRate,
+                overallAverage,
+                riskRate
+            },
+            dailyOverview,
+            questionsTrend,
+            classesOverview,
+            riskAlerts
+        };
+    }
+
 
 
 

@@ -131,16 +131,24 @@ This document explains how the application models and processes exams (forms/que
 - Endpoint: `GET /responses/:id?fromDay=YYYY-MM-DD&toDay=YYYY-MM-DD`
   - `:id` is `schoolId`.
   - Roles: `super-admin`, `school`, `teacher`, `parent`.
-  - Service: `getSchoolResponsesStatistics(schoolId, from, to)`
-    - Finds classes for school, then students in those classes.
+  - Service: `getDailySchoolResponsesStatistics(schoolId, from, to)`
+    - Finds classes for school (with names), then students in those classes.
     - Validates date range.
     - Pulls responses for the daily form only (by finding form with `subject = 'daily'`).
     - Aggregates per question:
-      - `values`: frequency map of answers.
-      - `average`: for slider questions, weighted average; otherwise, most common answer.
+      - `text`: multilingual question text `{ ar, en }`.
+      - `type`: question type.
+      - `distribution`: frequency map of answers.
+      - `overallAverage`: for slider questions, weighted average; otherwise, 0.
+    - Aggregates per class:
+      - `classId`: the class ObjectId.
+      - `className`: the class name.
+      - `studentsCount`: number of students in the class.
+      - `average`: class average (slider questions only).
+      - `riskRate`: count of at-risk students (red status or absent).
+      - `status`: overall class status (red if >50% at risk).
     - Computes `totalResponses` and `totalAverage` (across slider values only).
-    - Also computes a previous period (same length) to compare.
-    - Returns `{ currentRange, previousRange, dateRange }`.
+    - Returns detailed breakdown including `dailyOverview`, `questionsTrend`, `classesOverview`, and `riskAlerts`.
 
 ### Status Utilities
 

@@ -45,19 +45,28 @@ const pagination = ({ defaultLimit = 5, maxLimit = 50, allowedFilters = [] } = {
             }
             // Array filters - split by comma and filter empty values
             else if (f === 'targetSchools' && req.query.targetSchools) {
-                const schools = req.query.targetSchools.split(',').map(s => s.trim()).filter(Boolean);
+                const targetSchoolsValue = req.query.targetSchools;
+                const schools = Array.isArray(targetSchoolsValue)
+                    ? targetSchoolsValue.filter(Boolean)
+                    : targetSchoolsValue.split(',').map(s => s.trim()).filter(Boolean);
                 if (schools.length > 0) {
                     filter.targetSchools = { $in: schools };
                 }
             }
             else if (f === 'supportedLanguages' && req.query.supportedLanguages) {
-                const langs = req.query.supportedLanguages.split(',').map(l => l.trim()).filter(Boolean);
+                const supportedLanguagesValue = req.query.supportedLanguages;
+                const langs = Array.isArray(supportedLanguagesValue)
+                    ? supportedLanguagesValue.filter(Boolean)
+                    : supportedLanguagesValue.split(',').map(l => l.trim()).filter(Boolean);
                 if (langs.length > 0) {
                     filter.supportedLanguages = { $in: langs };
                 }
             }
             else if (f === 'allowedSchools' && req.query.allowedSchools) {
-                const schools = req.query.allowedSchools.split(',').map(s => s.trim()).filter(Boolean);
+                const allowedSchoolsValue = req.query.allowedSchools;
+                const schools = Array.isArray(allowedSchoolsValue)
+                    ? allowedSchoolsValue.filter(Boolean)
+                    : allowedSchoolsValue.split(',').map(s => s.trim()).filter(Boolean);
                 if (schools.length > 0) {
                     filter.allowedSchools = { $in: schools };
                 }
