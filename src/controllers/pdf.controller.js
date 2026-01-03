@@ -350,9 +350,6 @@ module.exports = {
   migratePDFs,
   getPDFForAdminById,
   getFilterOptions,
-
-
-
-};  getPDFByIdForDashboard  getPDFByIdPublic, getPDFByIdPublic,
+  getPDFByIdPublic,
   getPDFByIdForDashboard
 };
