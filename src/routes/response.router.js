@@ -11,8 +11,23 @@ router.use(authenticateUser);
 // Submit a form response
 router.post('/submit', authorizeRole(['student']), validate(responseSchema), responseController.submitFormResponse);
 
+
+
+
 // Get all responses for school (school can see their responses) by date range
 router.get('/:id', authorizeRole(['super-admin', 'school', 'teacher', 'parent']), responseController.getSchoolResponsesStatistics);
+
+
+
+// Get all responses for school by date range - daily
+router.get('/daily/:id', authorizeRole(['super-admin', 'school', 'teacher', 'parent']), responseController.getSchoolResponsesStatisticsDaily);
+
+
+
+// Get all responses for school by date range - daily
+router.get('/daily/pdf/:id', authorizeRole(['super-admin', 'school', 'teacher', 'parent']), responseController.getSchoolResponsesStatisticsDaily);
+
+
 
 // Get student status (school can see their students' status, teacher can see their students' status, parent can see their children's status)
 // TODO: enhance and fix errors

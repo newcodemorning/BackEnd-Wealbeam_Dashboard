@@ -88,7 +88,32 @@ exports.getSchoolResponsesStatistics = async (req, res) => {
 
         const formDay = req.query.fromDay || yesterday.toISOString().split('T')[0];
         const toDay = req.query.toDay || today.toISOString().split('T')[0];
-        // const statistics = await responseService.getSchoolResponsesStatistics(schoolId, formDay, toDay);
+        const statistics = await responseService.getSchoolResponsesStatistics(schoolId, formDay, toDay);
+
+        res.json({
+            success: true,
+            data: statistics
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+}; 
+
+
+
+exports.getSchoolResponsesStatisticsDaily = async (req, res) => {
+    try {
+        const schoolId = req.params.id;
+        const today = new Date();
+
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 100);
+
+        const formDay = req.query.fromDay || yesterday.toISOString().split('T')[0];
+        const toDay = req.query.toDay || today.toISOString().split('T')[0];
         const statistics = await responseService.getDailySchoolResponsesStatistics(schoolId, formDay, toDay);
 
         res.json({
