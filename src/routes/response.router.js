@@ -25,7 +25,7 @@ router.get('/daily/:id', authorizeRole(['super-admin', 'school', 'teacher', 'par
 
 
 // Get all responses for school by date range - daily
-router.get('/daily/pdf/:id', authorizeRole(['super-admin', 'school', 'teacher', 'parent']), responseController.getSchoolResponsesStatisticsDaily);
+router.get('/daily/pdf/:id', authorizeRole(['super-admin', 'school', 'teacher', 'parent']), responseController.getSchoolResponsesStatisticsDailyPDF);
 
 
 

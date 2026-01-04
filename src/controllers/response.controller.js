@@ -1,5 +1,6 @@
 const responseService = require('../services/response.service');
 const Response = require('../models/response.model');
+const { generateAnalyticsReport } = require('../services/report.service');
 
 exports.submitFormResponse = async (req, res) => {
     try {
@@ -9,6 +10,8 @@ exports.submitFormResponse = async (req, res) => {
 
         const lastSubmitted = await Response.findOne({ student: studentId }).sort({ timestamp: -1 });
         console.log("Last submitted:", lastSubmitted);
+        // TODO : uncoomment this block to enforce daily submission limit
+
         // if (lastSubmitted) {
         //     const lastDate = new Date(lastSubmitted.timestamp);
         //     const today = new Date();
@@ -84,7 +87,7 @@ exports.getSchoolResponsesStatistics = async (req, res) => {
         const today = new Date();
 
         const yesterday = new Date(today);
-        yesterday.setDate(today.getDate() - 100);
+        yesterday.setDate(today.getDate() - 7);
 
         const formDay = req.query.fromDay || yesterday.toISOString().split('T')[0];
         const toDay = req.query.toDay || today.toISOString().split('T')[0];
@@ -110,7 +113,7 @@ exports.getSchoolResponsesStatisticsDaily = async (req, res) => {
         const today = new Date();
 
         const yesterday = new Date(today);
-        yesterday.setDate(today.getDate() - 100);
+        yesterday.setDate(today.getDate() - 7);
 
         const formDay = req.query.fromDay || yesterday.toISOString().split('T')[0];
         const toDay = req.query.toDay || today.toISOString().split('T')[0];
@@ -119,6 +122,38 @@ exports.getSchoolResponsesStatisticsDaily = async (req, res) => {
         res.json({
             success: true,
             data: statistics
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+
+
+
+exports.getSchoolResponsesStatisticsDailyPDF = async (req, res) => {
+    try {
+        const schoolId = req.params.id;
+        const today = new Date();
+
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 7);
+
+        const formDay = req.query.fromDay || yesterday.toISOString().split('T')[0];
+        const toDay = req.query.toDay || today.toISOString().split('T')[0];
+        const statistics = await responseService.getDailySchoolResponsesStatistics(schoolId, formDay, toDay);
+        const result = await generateAnalyticsReport({
+            success: true,
+            data: statistics
+        });
+
+
+        res.json({
+            success: true,
+            data: result,
+
         });
     } catch (error) {
         res.status(500).json({
