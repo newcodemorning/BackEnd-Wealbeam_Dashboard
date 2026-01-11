@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const TicketSchema = new mongoose.Schema(
     {
@@ -33,6 +33,8 @@ const TicketMessageSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
-export const Ticket = mongoose.model("Ticket", TicketSchema);
-export const TicketMessage = mongoose.model("TicketMessage", TicketMessageSchema);
+const Ticket = mongoose.model("Ticket", TicketSchema);
+const TicketMessage = mongoose.model("TicketMessage", TicketMessageSchema);
+
+module.exports = { Ticket, TicketMessage };
 
