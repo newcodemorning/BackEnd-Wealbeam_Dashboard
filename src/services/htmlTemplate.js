@@ -6,8 +6,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export function generateWellnessReportHTML(data, qrCodeDataURL) {
-    const { meta, summary, dailyOverview, questionsTrend, classesOverview, riskAlerts } = data;
-
+    const { meta, summary, dailyOverview, questionsTrend, classesOverview, riskAlerts, schoolName } = data;
+ 
     // Provide fallbacks for optional data
     const studentsTimeline = data.studentsTimeline || [];
     const insights = data.insights || [
@@ -23,7 +23,7 @@ export function generateWellnessReportHTML(data, qrCodeDataURL) {
     ];
 
     // School name fallback
-    const schoolName = meta.schoolName || 'Educational Institution';
+    // const schoolName = meta.schoolName || 'Educational Institution';
 
     const formatDate = (dateStr) => {
         const date = new Date(dateStr);

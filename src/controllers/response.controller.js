@@ -1,6 +1,7 @@
 const responseService = require('../services/response.service');
 const Response = require('../models/response.model');
 const { generateAnalyticsReport } = require('../services/report.service');
+const School = require('../models/school.model');
 
 exports.submitFormResponse = async (req, res) => {
     try {
@@ -103,7 +104,7 @@ exports.getSchoolResponsesStatistics = async (req, res) => {
             error: error.message
         });
     }
-}; 
+};
 
 
 
@@ -143,10 +144,14 @@ exports.getSchoolResponsesStatisticsDailyPDF = async (req, res) => {
 
         const formDay = req.query.fromDay || yesterday.toISOString().split('T')[0];
         const toDay = req.query.toDay || today.toISOString().split('T')[0];
+        const schoolName = await School.findById(schoolId)
         const statistics = await responseService.getDailySchoolResponsesStatistics(schoolId, formDay, toDay);
         const result = await generateAnalyticsReport({
             success: true,
-            data: statistics
+            data: {
+                schoolName: schoolName.schoolName,
+                ...statistics
+            }
         });
 
 

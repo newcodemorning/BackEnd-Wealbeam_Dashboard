@@ -10,6 +10,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 const router = express.Router();
 
 router.use(authenticateUser, authorizeRole(["super-admin", "school", "teacher", "parent"]));
+
 router.post('/open-ticket',validate(ticketSchema), upload.single('photo'), ticketController.createTicket);
 router.get('/', ticketController.fetchTickets);
 

@@ -1,12 +1,38 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
-const ticketSchema = new mongoose.Schema({
-    fileUrl: { type: String, default: '' }, // URL to the uploaded photo
-    category: { type: String, },
-    title: { type: String, },
-    question: { type: String },
-    createdAt: { type: Date, default: Date.now },
-});
+const TicketSchema = new mongoose.Schema(
+    {
+        title: { type: String, required: true, trim: true },
+        category: {
+            type: String,
+            enum: ["academic", "financial", "behavior", "technical", "other"],
+            default: "other"
+        },
+        status: { type: String, enum: ["open", "pending", "closed"], default: "open" },
+        priority: { type: String, enum: ["low", "medium", "high"], default: "medium" },
+        createdBy: {
+            userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+            role: { type: String, enum: ["parent", "student", "teacher", "school"], required: true }
+        },
+        lastMessageAt: { type: Date, default: Date.now },
+        closedAt: { type: Date, default: null }
+    },
+    { timestamps: true }
+);
 
- const Ticket= mongoose.model('Ticket', ticketSchema);
- module.exports = Ticket;
+const TicketMessageSchema = new mongoose.Schema(
+    {
+        ticketId: { type: mongoose.Schema.Types.ObjectId, ref: "Ticket", required: true, index: true },
+        sender: {
+            userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+            role: { type: String, enum: ["parent", "student", "teacher", "school", "super-admin"], required: true }
+        },
+        message: { type: String, required: true },
+        isRead: { type: Boolean, default: false }
+    },
+    { timestamps: true }
+);
+
+export const Ticket = mongoose.model("Ticket", TicketSchema);
+export const TicketMessage = mongoose.model("TicketMessage", TicketMessageSchema);
+
