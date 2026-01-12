@@ -230,20 +230,25 @@ class PDFService {
       // If user is a student, filter by their school
       if (userRole === 'student') {
         const student = await Student.findOne({ user: userId }).select('school');
-        if (!student || !student.school) {
-          throw new Error('Student school not found');
+        if (!student) {
+          throw new Error('Student not found');
         }
 
-        query.$and = [
-          query.$or ? { $or: query.$or } : {},
-          {
-            $or: [
-              { isPublic: true },
-              { targetSchools: student.school }
-            ]
-          }
-        ];
-        delete query.$or;
+        // If student has no school, only show public PDFs
+        if (!student.school) {
+          query.isPublic = true;
+        } else {
+          query.$and = [
+            query.$or ? { $or: query.$or } : {},
+            {
+              $or: [
+                { isPublic: true },
+                { targetSchools: student.school }
+              ]
+            }
+          ];
+          delete query.$or;
+        }
       }
 
       // If user is a parent, get their children's schools
@@ -254,16 +259,21 @@ class PDFService {
         if (parent && parent.students && parent.students.length > 0) {
           const schoolIds = [...new Set(parent.students.map(s => s.school).filter(Boolean))];
 
-          query.$and = [
-            query.$or ? { $or: query.$or } : {},
-            {
-              $or: [
-                { isPublic: true },
-                { targetSchools: { $in: schoolIds } }
-              ]
-            }
-          ];
-          delete query.$or;
+          // If no valid school IDs, only show public PDFs
+          if (schoolIds.length === 0) {
+            query.isPublic = true;
+          } else {
+            query.$and = [
+              query.$or ? { $or: query.$or } : {},
+              {
+                $or: [
+                  { isPublic: true },
+                  { targetSchools: { $in: schoolIds } }
+                ]
+              }
+            ];
+            delete query.$or;
+          }
         } else {
           query.isPublic = true;
         }
@@ -311,14 +321,19 @@ class PDFService {
       // If user is a student, filter by their school
       if (userRole === 'student') {
         const student = await Student.findOne({ user: userId }).select('school');
-        if (!student || !student.school) {
-          throw new Error('Student school not found');
+        if (!student) {
+          throw new Error('Student not found');
         }
 
-        query.$or = [
-          { isPublic: true },
-          { targetSchools: student.school }
-        ];
+        // If student has no school, only show public PDFs
+        if (!student.school) {
+          query.isPublic = true;
+        } else {
+          query.$or = [
+            { isPublic: true },
+            { targetSchools: student.school }
+          ];
+        }
       }
 
       // If user is a parent, get their children's schools
@@ -329,10 +344,15 @@ class PDFService {
         if (parent && parent.students && parent.students.length > 0) {
           const schoolIds = [...new Set(parent.students.map(s => s.school).filter(Boolean))];
 
-          query.$or = [
-            { isPublic: true },
-            { targetSchools: { $in: schoolIds } }
-          ];
+          // If no valid school IDs, only show public PDFs
+          if (schoolIds.length === 0) {
+            query.isPublic = true;
+          } else {
+            query.$or = [
+              { isPublic: true },
+              { targetSchools: { $in: schoolIds } }
+            ];
+          }
         } else {
           query.isPublic = true;
         }
