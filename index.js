@@ -113,7 +113,9 @@ langRouter.use("/blog", BlogRoutes);
 
 
 
-
+app.get('/version', (req, res) => {
+  res.json({ version: '1.0.0' });
+});
 
 // Start server
 const PORT = process.env.PORT || 4000;
