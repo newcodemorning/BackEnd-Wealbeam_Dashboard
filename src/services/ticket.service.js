@@ -80,11 +80,12 @@ module.exports = {
             .sort({ createdAt: 1 })
             .lean();
 
-          // Get user details
-          const userDetails = await getUserDetails(
-            ticket.createdBy.userId._id,
-            ticket.createdBy.role
-          );
+          // Get user details - check if userId is populated
+          let userDetails = null;
+          if (ticket.createdBy && ticket.createdBy.userId) {
+            const userId = ticket.createdBy.userId._id || ticket.createdBy.userId;
+            userDetails = await getUserDetails(userId, ticket.createdBy.role);
+          }
 
           return {
             ...ticket,
@@ -146,7 +147,8 @@ module.exports = {
       }
 
       // Check access - super-admin can view all, users can only view their own
-      if (role !== 'super-admin' && ticket.createdBy.userId._id.toString() !== userId) {
+      const ticketOwnerId = ticket.createdBy.userId._id || ticket.createdBy.userId;
+      if (role !== 'super-admin' && ticketOwnerId.toString() !== userId) {
         throw new Error('Unauthorized to view this ticket');
       }
 
@@ -157,10 +159,11 @@ module.exports = {
         .lean();
 
       // Get user details
-      const userDetails = await getUserDetails(
-        ticket.createdBy.userId._id,
-        ticket.createdBy.role
-      );
+      let userDetails = null;
+      if (ticket.createdBy && ticket.createdBy.userId) {
+        const ownerUserId = ticket.createdBy.userId._id || ticket.createdBy.userId;
+        userDetails = await getUserDetails(ownerUserId, ticket.createdBy.role);
+      }
 
       // Mark messages as read for the current user
       await TicketMessage.updateMany(
