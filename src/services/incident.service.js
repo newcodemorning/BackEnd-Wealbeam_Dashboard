@@ -1,7 +1,7 @@
 const Incident = require('../models/incident.model');
 const Teacher = require('../models/teacher.model');
 const mongoose = require('mongoose');
-
+ 
 class IncidentService {
     async createIncident(incidentData) {
         const incident = new Incident(incidentData);
