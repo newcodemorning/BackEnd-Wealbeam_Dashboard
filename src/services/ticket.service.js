@@ -7,22 +7,37 @@ const School = require('../models/school.model');
 
 // Get user details by role
 const getUserDetails = async (userId, role) => {
+  if (!userId) return null;
+
   let details = null;
-  switch (role) {
-    case 'parent':
-      details = await Parent.findOne({ user: userId }).select('first_name last_name');
-      break;
-    case 'student':
-      details = await Student.findOne({ user: userId }).select('first_name last_name');
-      break;
-    case 'teacher':
-      details = await Teacher.findOne({ user: userId }).select('first_name last_name');
-      break;
-    case 'school':
-      details = await School.findOne({ user: userId }).select('schoolName');
-      break;
+  try {
+    switch (role) {
+      case 'parent':
+        details = await Parent.findOne({ user: userId }).select('first_name last_name');
+        break;
+      case 'student':
+        details = await Student.findOne({ user: userId }).select('first_name last_name');
+        break;
+      case 'teacher':
+        details = await Teacher.findOne({ user: userId }).select('first_name last_name');
+        break;
+      case 'school':
+        details = await School.findOne({ user: userId }).select('schoolName');
+        break;
+    }
+  } catch (error) {
+    console.error('Error fetching user details:', error);
   }
   return details;
+};
+
+// Helper to safely get userId from populated or unpopulated field
+const getUserId = (userField) => {
+  if (!userField) return null;
+  // If populated, it's an object with _id
+  if (userField._id) return userField._id;
+  // If not populated, it's the ObjectId directly
+  return userField;
 };
 
 module.exports = {
@@ -80,11 +95,13 @@ module.exports = {
             .sort({ createdAt: 1 })
             .lean();
 
-          // Get user details - check if userId is populated
+          // Get user details - safely extract userId
           let userDetails = null;
-          if (ticket.createdBy && ticket.createdBy.userId) {
-            const userId = ticket.createdBy.userId._id || ticket.createdBy.userId;
-            userDetails = await getUserDetails(userId, ticket.createdBy.role);
+          if (ticket.createdBy) {
+            const userId = getUserId(ticket.createdBy.userId);
+            if (userId) {
+              userDetails = await getUserDetails(userId, ticket.createdBy.role);
+            }
           }
 
           return {
@@ -119,11 +136,18 @@ module.exports = {
             .sort({ createdAt: 1 })
             .lean();
 
+          // Safely calculate unread count
+          const unreadCount = messages.filter(m => {
+            if (m.isRead) return false;
+            const senderUserId = getUserId(m.sender?.userId);
+            return senderUserId && senderUserId.toString() !== userId;
+          }).length;
+
           return {
             ...ticket,
             messages,
             messageCount: messages.length,
-            unreadCount: messages.filter(m => !m.isRead && m.sender.userId._id.toString() !== userId).length
+            unreadCount
           };
         })
       );
@@ -146,10 +170,14 @@ module.exports = {
         throw new Error('Ticket not found');
       }
 
+      // Safely get ticket owner ID
+      const ticketOwnerId = getUserId(ticket.createdBy?.userId);
+
       // Check access - super-admin can view all, users can only view their own
-      const ticketOwnerId = ticket.createdBy.userId._id || ticket.createdBy.userId;
-      if (role !== 'super-admin' && ticketOwnerId.toString() !== userId) {
-        throw new Error('Unauthorized to view this ticket');
+      if (role !== 'super-admin') {
+        if (!ticketOwnerId || ticketOwnerId.toString() !== userId) {
+          throw new Error('Unauthorized to view this ticket');
+        }
       }
 
       // Get messages
@@ -158,11 +186,10 @@ module.exports = {
         .sort({ createdAt: 1 })
         .lean();
 
-      // Get user details
+      // Get user details safely
       let userDetails = null;
-      if (ticket.createdBy && ticket.createdBy.userId) {
-        const ownerUserId = ticket.createdBy.userId._id || ticket.createdBy.userId;
-        userDetails = await getUserDetails(ownerUserId, ticket.createdBy.role);
+      if (ticket.createdBy && ticketOwnerId) {
+        userDetails = await getUserDetails(ticketOwnerId, ticket.createdBy.role);
       }
 
       // Mark messages as read for the current user
@@ -200,9 +227,14 @@ module.exports = {
         throw new Error('Cannot reply to a closed ticket');
       }
 
+      // Safely get ticket owner ID
+      const ticketOwnerId = getUserId(ticket.createdBy?.userId);
+
       // Check access - super-admin can reply to all, users can only reply to their own
-      if (role !== 'super-admin' && ticket.createdBy.userId.toString() !== userId) {
-        throw new Error('Unauthorized to reply to this ticket');
+      if (role !== 'super-admin') {
+        if (!ticketOwnerId || ticketOwnerId.toString() !== userId) {
+          throw new Error('Unauthorized to reply to this ticket');
+        }
       }
 
       // Create message
@@ -279,7 +311,10 @@ module.exports = {
         throw new Error('Ticket not found');
       }
 
-      if (ticket.createdBy.userId.toString() !== userId) {
+      // Safely get ticket owner ID
+      const ticketOwnerId = getUserId(ticket.createdBy?.userId);
+
+      if (!ticketOwnerId || ticketOwnerId.toString() !== userId) {
         throw new Error('Unauthorized to close this ticket');
       }
 

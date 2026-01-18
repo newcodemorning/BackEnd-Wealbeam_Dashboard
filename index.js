@@ -114,7 +114,7 @@ langRouter.use("/blog", BlogRoutes);
 
 
 app.get('/version', (req, res) => {
-  res.json({ version: '1.0.1' });
+  res.json({ version: '1.0.3' });
 });
 
 // Start server
