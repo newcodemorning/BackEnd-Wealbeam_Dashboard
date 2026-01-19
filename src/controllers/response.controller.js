@@ -1,6 +1,6 @@
 const responseService = require('../services/response.service');
 const Response = require('../models/response.model');
-const { generateAnalyticsReport } = require('../services/report.service');
+const { generateAnalyticsReport, generateStudentsStatusReport, generateClassStudentsStatusReport } = require('../services/report.service');
 const School = require('../models/school.model');
 
 exports.submitFormResponse = async (req, res) => {
@@ -144,7 +144,7 @@ exports.getSchoolResponsesStatisticsDailyPDF = async (req, res) => {
 
         const formDay = req.query.fromDay || yesterday.toISOString().split('T')[0];
         const toDay = req.query.toDay || today.toISOString().split('T')[0];
-        const schoolName = await School.findById(schoolId)
+        const schoolName = await School.findById(schoolId);
         const statistics = await responseService.getDailySchoolResponsesStatistics(schoolId, formDay, toDay);
         const result = await generateAnalyticsReport({
             success: true,
@@ -154,14 +154,114 @@ exports.getSchoolResponsesStatisticsDailyPDF = async (req, res) => {
             }
         });
 
-
         res.json({
             success: true,
-            data: result,
-
+            message: 'Daily statistics report generated successfully',
+            data: {
+                fileName: result.fileName,
+                fileType: result.fileType,
+                downloadUrl: result.downloadUrl,
+                generatedAt: new Date().toISOString()
+            }
         });
     } catch (error) {
         res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+
+
+/**
+ * Get all students status for a school
+ * Returns school info, classes, and students with their response status (green, red, not_answered)
+ */
+exports.getSchoolStudentsStatus = async (req, res) => {
+    try {
+        const schoolId = req.params.id;
+
+        const result = await responseService.getSchoolStudentsStatus(schoolId);
+
+        res.json({
+            success: true,
+            data: result
+        });
+    } catch (error) {
+        res.status(error.message === 'School not found' ? 404 : 500).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+
+
+/**
+ * Get all students status for a school as PDF report
+ * Generates a PDF report with school info, classes summary, and students with their status
+ */
+exports.getSchoolStudentsStatusPDF = async (req, res) => {
+    try {
+        const schoolId = req.params.id;
+
+        // Get the students status data
+        const statusData = await responseService.getSchoolStudentsStatus(schoolId);
+
+        // Generate the PDF report
+        const result = await generateStudentsStatusReport({
+            success: true,
+            data: statusData
+        });
+
+        res.json({
+            success: true,
+            message: 'School students status report generated successfully',
+            data: {
+                fileName: result.fileName,
+                fileType: result.fileType,
+                downloadUrl: result.downloadUrl,
+                generatedAt: new Date().toISOString()
+            }
+        });
+    } catch (error) {
+        res.status(error.message === 'School not found' ? 404 : 500).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+
+
+/**
+ * Get all students status for a class as PDF report
+ * Generates a PDF report with class info, school info, and students with their detailed status including questions and answers
+ */
+exports.getClassStudentsStatusPDF = async (req, res) => {
+    try {
+        const classId = req.params.id;
+
+        // Get the class students status data with detailed answers
+        const statusData = await responseService.getClassStudentsStatus(classId);
+
+        // Generate the PDF report using the detailed class template
+        const result = await generateClassStudentsStatusReport({
+            success: true,
+            data: statusData
+        });
+
+        res.json({
+            success: true,
+            message: 'Class students status report generated successfully',
+            data: {
+                fileName: result.fileName,
+                fileType: result.fileType,
+                downloadUrl: result.downloadUrl,
+                generatedAt: new Date().toISOString()
+            },
+            statusData: statusData
+        });
+    } catch (error) {
+        res.status(error.message === 'Class not found' ? 404 : 500).json({
             success: false,
             error: error.message
         });

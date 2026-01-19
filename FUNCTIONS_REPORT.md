@@ -139,6 +139,10 @@ This document catalogs the primary functions implemented across the WeAllBeam ap
 - `submitFormResponse(req, res)`: Submit answers to a form.
 - `getStudentStatus(req, res)`: Status overview for a student.
 - `getSchoolResponsesStatistics(req, res)`: Aggregated stats for school by date range.
+- `getSchoolResponsesStatisticsDaily(req, res)`: Daily statistics for school.
+- `getSchoolResponsesStatisticsDailyPDF(req, res)`: Generate downloadable daily statistics PDF report with URL.
+- `getSchoolStudentsStatusPDF(req, res)`: Generate downloadable school-wide status PDF report with URL.
+- `getClassStudentsStatusPDF(req, res)`: Generate downloadable class-specific detailed PDF report with URL.
 
 ## Services
 

@@ -33,6 +33,18 @@ router.get('/daily/pdf/:id', authorizeRole(['super-admin', 'school', 'teacher', 
 // TODO: enhance and fix errors
 router.get('/student-status/:studentId', authorizeRole(['super-admin', 'school', 'teacher', 'parent']), responseController.getStudentStatus);
 
+
+// Get all students status for a school with detailed school, classes, and students information
+router.get('/school-students-status/:id', authorizeRole(['super-admin', 'school', 'teacher']), responseController.getSchoolStudentsStatus);
+
+
+// Get all students status for a school as PDF report
+router.get('/school-students-status/pdf/:id', authorizeRole(['super-admin', 'school', 'teacher']), responseController.getSchoolStudentsStatusPDF);
+
+
+// Get all students status for a class as PDF report
+router.get('/class-students-status/pdf/:id', authorizeRole(['super-admin', 'school', 'teacher']), responseController.getClassStudentsStatusPDF);
+
 // // Get all responses for a subject (school can see their responses, teacher can see their responses)
 // router.get('/subject/:subject', authorizeRole(['super-admin', 'school', 'teacher']), responseController.getSubjectResponses);
 

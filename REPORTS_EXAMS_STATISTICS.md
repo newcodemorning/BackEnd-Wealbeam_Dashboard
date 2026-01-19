@@ -26,7 +26,6 @@ This document explains how the application models and processes exams (forms/que
 ### Data Model
 
 - `Form`
-
   - `subject`: unique string (e.g., `daily`). No spaces allowed when creating.
   - `questions`: array of `Question` (ordered, sequential `order` starting at 1).
   - Timestamps: `createdAt`, `updatedAt`.
@@ -44,20 +43,17 @@ This document explains how the application models and processes exams (forms/que
 ### Core Behaviors
 
 - Create a form (`POST /questions`):
-
   - Requires roles: `super-admin`, `school`.
   - Validated by Joi (`createFormSchema`).
   - Checks: unique subject, no spaces, at least one question, strict sequential `order` (1..N).
 
 - Read forms:
-
   - `GET /questions`: list all (roles: `super-admin`, `school`, `teacher`, `student`).
   - `GET /questions/daily`: fetch daily form (localized text via `lang` middleware).
   - `GET /questions/:subject`: get by subject (localized fields).
   - `GET /questions/id/:id`: get by id (localized fields).
 
 - Update forms:
-
   - `PUT /questions/:subject` and `PUT /questions/id/:id` (roles: `super-admin`, `school`).
   - Validates sequential `order` if `questions` updated.
 
@@ -90,7 +86,6 @@ This document explains how the application models and processes exams (forms/que
 ### Submission Flow
 
 - Endpoint: `POST /responses/submit`
-
   - Roles: `student` only.
   - Body: `{ form: <formId>, answers: [ { question: { id, text, type }, answer } ] }`.
   - Joi validation (`responseSchema`) ensures required shape.
@@ -99,7 +94,6 @@ This document explains how the application models and processes exams (forms/que
     - All form question IDs are included once; prevents missing/extra questions.
 
 - Processing: `ResponseService.processFormResponse(studentId, formId, answers)`
-
   - Loads `Form`; builds map of questions by id.
   - For each answer:
     - Verifies question exists and type matches.
@@ -178,25 +172,21 @@ This document explains how the application models and processes exams (forms/que
 ### Core Endpoints
 
 - Upload: `POST /pdf` (requires auth + file upload via Multer `upload.fields`) → `uploadPDF`
-
   - Accepts: `pdf` (required), `coverImage` (optional) + metadata.
   - Normalizes multilingual title/description and flags.
 
 - List: `GET /pdf` → `getAllPDFs`
-
   - Pagination and filter support (search, category-like fields via `pagination.js`).
   - Role-aware visibility: students/parents see public or targeted-to-school PDFs.
 
 - Dashboard list: `GET /pdf/admin` → `getAllPDFsForDashboard`
-
   - Administrative listing without public/visibility constraints.
 
 - Download: `GET /pdf/download/:id` → `downloadPDF`
-
   - Resolves absolute file path in `uploads` (or production path) and streams file.
+  - Returns download URL based on Base URL environment configuration.
 
 - Update: `PUT /pdf/:id` → `updatePDF`
-
   - Updates multilingual fields, visibility flags, and optionally replaces files.
 
 - Get By ID (admin/public/dashboard variants): `getPDFForAdminById`, `getPDFByIdPublic`, `getPDFByIdForDashboard`.
@@ -221,7 +211,6 @@ This document explains how the application models and processes exams (forms/que
 ### Endpoints
 
 - `POST /incidents` → `createIncident`
-
   - Requires `req.user.id` (reporter).
   - Persists incident via service.
 

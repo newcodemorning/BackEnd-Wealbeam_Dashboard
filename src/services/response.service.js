@@ -753,6 +753,368 @@ class ResponseService {
         const priorities = { red: 3, yellow: 2, green: 1 };
         return priorities[status] || 0;
     }
+
+    /**
+     * Get all students status for a school with detailed information
+     * Returns school info, classes, and students with their response status
+     * @param {string} schoolId - The school ID
+     * @returns {Object} School data with classes and students status
+     */
+    async getSchoolStudentsStatus(schoolId) {
+        // Get school with user info for email
+        const school = await require('../models/school.model').findById(schoolId)
+            .populate('user', 'email')
+            .populate('teachers');
+
+        if (!school) throw new Error('School not found');
+
+        // Get all classes for the school
+        const classes = await Class.find({ school: schoolId })
+            .populate('teacher', 'first_name last_name')
+            .select('_id ClassName Subject SelectDate teacher');
+
+        const classIds = classes.map(c => c._id);
+
+        // Get all students in these classes
+        const students = await Student.find({ class: { $in: classIds } })
+            .populate('user', 'email')
+            .select('_id first_name last_name class user photo gender date_of_birth');
+
+        const studentIds = students.map(s => s._id);
+
+        // Get the latest response for each student
+        const latestResponses = await Response.aggregate([
+            {
+                $match: {
+                    student: { $in: studentIds }
+                }
+            },
+            {
+                $sort: { timestamp: -1 }
+            },
+            {
+                $group: {
+                    _id: '$student',
+                    latestResponse: { $first: '$$ROOT' }
+                }
+            }
+        ]);
+
+        // Create a map of student responses
+        const responseMap = {};
+        latestResponses.forEach(r => {
+            responseMap[r._id.toString()] = r.latestResponse;
+        });
+
+        // Determine student status based on their last response
+        const getStudentStatus = (studentId) => {
+            const response = responseMap[studentId.toString()];
+
+            if (!response) {
+                return {
+                    status: 'not_answered',
+                    lastResponseDate: null,
+                    answers: []
+                };
+            }
+
+            // Calculate overall status from answers
+            const answers = response.answers || [];
+            let hasRed = false;
+            let hasYellow = false;
+
+            answers.forEach(a => {
+                if (a.status === 'red') hasRed = true;
+                else if (a.status === 'yellow') hasYellow = true;
+            });
+
+            let overallStatus = 'green';
+            if (hasRed) overallStatus = 'red';
+            else if (hasYellow) overallStatus = 'yellow';
+
+            return {
+                status: overallStatus,
+                lastResponseDate: response.timestamp,
+                answersCount: answers.length
+            };
+        };
+
+        // Build students array for each class
+        const classStudentsMap = {};
+        classes.forEach(c => {
+            classStudentsMap[c._id.toString()] = [];
+        });
+
+        students.forEach(student => {
+            const classId = student.class?.toString();
+            if (classId && classStudentsMap[classId]) {
+                const statusInfo = getStudentStatus(student._id);
+                classStudentsMap[classId].push({
+                    id: student._id,
+                    name: `${student.first_name} ${student.last_name}`,
+                    email: student.user?.email || null,
+                    photo: student.photo || null,
+                    gender: student.gender,
+                    dateOfBirth: student.date_of_birth,
+                    status: statusInfo.status,
+                    lastResponseDate: statusInfo.lastResponseDate,
+                    answersCount: statusInfo.answersCount || 0
+                });
+            }
+        });
+
+        // Build classes array with students
+        const classesData = classes.map(cls => {
+            const classStudents = classStudentsMap[cls._id.toString()] || [];
+
+            // Count status distribution
+            const statusCounts = {
+                green: 0,
+                yellow: 0,
+                red: 0,
+                not_answered: 0
+            };
+
+            classStudents.forEach(s => {
+                statusCounts[s.status]++;
+            });
+
+            return {
+                id: cls._id,
+                className: cls.ClassName,
+                subject: cls.Subject,
+                selectDate: cls.SelectDate,
+                teacher: cls.teacher ? {
+                    id: cls.teacher._id,
+                    name: `${cls.teacher.first_name} ${cls.teacher.last_name}`
+                } : null,
+                studentsCount: classStudents.length,
+                statusDistribution: statusCounts,
+                students: classStudents
+            };
+        });
+
+        // Calculate school-level statistics
+        const totalStudents = students.length;
+        const totalClasses = classes.length;
+
+        const schoolStatusCounts = {
+            green: 0,
+            yellow: 0,
+            red: 0,
+            not_answered: 0
+        };
+
+        classesData.forEach(cls => {
+            schoolStatusCounts.green += cls.statusDistribution.green;
+            schoolStatusCounts.yellow += cls.statusDistribution.yellow;
+            schoolStatusCounts.red += cls.statusDistribution.red;
+            schoolStatusCounts.not_answered += cls.statusDistribution.not_answered;
+        });
+
+        return {
+            school: {
+                id: school._id,
+                name: school.schoolName,
+                email: school.user?.email || null,
+                address: school.address,
+                phone: school.phone,
+                language: school.language,
+                subscriptionEndDate: school.subscriptionEndDate,
+                teachersCount: school.teachers?.length || 0
+            },
+            statistics: {
+                totalStudents,
+                totalClasses,
+                statusDistribution: schoolStatusCounts,
+                statusPercentage: {
+                    green: totalStudents > 0 ? parseFloat(((schoolStatusCounts.green / totalStudents) * 100).toFixed(2)) : 0,
+                    yellow: totalStudents > 0 ? parseFloat(((schoolStatusCounts.yellow / totalStudents) * 100).toFixed(2)) : 0,
+                    red: totalStudents > 0 ? parseFloat(((schoolStatusCounts.red / totalStudents) * 100).toFixed(2)) : 0,
+                    not_answered: totalStudents > 0 ? parseFloat(((schoolStatusCounts.not_answered / totalStudents) * 100).toFixed(2)) : 0
+                }
+            },
+            classes: classesData,
+            generatedAt: new Date().toISOString()
+        };
+    }
+
+
+    /**
+     * Get all students status for a single class by class ID
+     * Returns school info, class info, and students with their detailed response status including questions and answers
+     */
+    async getClassStudentsStatus(classId) {
+        // Get the class with teacher info
+        const classData = await Class.findById(classId)
+            .populate('teacher', 'first_name last_name')
+            .populate('school');
+
+        if (!classData) throw new Error('Class not found');
+
+        // Get the school with user info
+        const school = await require('../models/school.model').findById(classData.school._id)
+            .populate('user', 'email')
+            .populate('teachers');
+
+        if (!school) throw new Error('School not found');
+
+        // Get all questions for the daily form (like getStudentStatus)
+        const { Form } = require('../models/question.model');
+        const form = await Form.findOne({ subject: 'daily' });
+        const questions = form ? form.questions : [];
+
+        // Get all students in this class
+        const students = await Student.find({ class: classId })
+            .populate('user', 'email')
+            .select('_id first_name last_name class user photo gender date_of_birth');
+
+        const studentIds = students.map(s => s._id);
+
+        // Get the latest response for each student
+        const latestResponses = await Response.aggregate([
+            {
+                $match: {
+                    student: { $in: studentIds }
+                }
+            },
+            {
+                $sort: { timestamp: -1 }
+            },
+            {
+                $group: {
+                    _id: '$student',
+                    latestResponse: { $first: '$$ROOT' }
+                }
+            }
+        ]);
+
+        // Create a map of student responses
+        const responseMap = {};
+        latestResponses.forEach(r => {
+            responseMap[r._id.toString()] = r.latestResponse;
+        });
+
+        // Determine student status based on their last response - with detailed answers
+        const getStudentStatusDetailed = (studentId) => {
+            const response = responseMap[studentId.toString()];
+
+            if (!response) {
+                return {
+                    status: 'not_answered',
+                    lastResponseDate: null,
+                    answersCount: 0,
+                    answers: []
+                };
+            }
+
+            // Calculate overall status from answers
+            const answers = response.answers || [];
+            let hasRed = false;
+            let hasYellow = false;
+
+            answers.forEach(a => {
+                if (a.status === 'red') hasRed = true;
+                else if (a.status === 'yellow') hasYellow = true;
+            });
+
+            let overallStatus = 'green';
+            if (hasRed) overallStatus = 'red';
+            else if (hasYellow) overallStatus = 'yellow';
+
+            return {
+                status: overallStatus,
+                lastResponseDate: response.timestamp,
+                answersCount: answers.length,
+                answers: answers.map(a => ({
+                    questionId: a.question?.id,
+                    questionText: a.question?.text,
+                    questionType: a.question?.type,
+                    answer: a.answer,
+                    status: a.status,
+                    trend: a.trend
+                }))
+            };
+        };
+
+        // Build students array for the class with detailed data
+        const classStudents = [];
+        const statusCounts = {
+            green: 0,
+            yellow: 0,
+            red: 0,
+            not_answered: 0
+        };
+
+        students.forEach(student => {
+            const statusInfo = getStudentStatusDetailed(student._id);
+            statusCounts[statusInfo.status]++;
+            classStudents.push({
+                id: student._id,
+                name: `${student.first_name} ${student.last_name}`,
+                firstName: student.first_name,
+                lastName: student.last_name,
+                email: student.user?.email || null,
+                photo: student.photo || null,
+                gender: student.gender,
+                dateOfBirth: student.date_of_birth,
+                status: statusInfo.status,
+                lastResponseDate: statusInfo.lastResponseDate,
+                answersCount: statusInfo.answersCount || 0,
+                answers: statusInfo.answers || []
+            });
+        });
+
+        // Build class data
+        const classInfo = {
+            id: classData._id,
+            className: classData.ClassName,
+            subject: classData.Subject,
+            selectDate: classData.SelectDate,
+            teacher: classData.teacher ? {
+                id: classData.teacher._id,
+                name: `${classData.teacher.first_name} ${classData.teacher.last_name}`
+            } : null,
+            studentsCount: classStudents.length,
+            statusDistribution: statusCounts,
+            students: classStudents
+        };
+
+        const totalStudents = students.length;
+
+        return {
+            school: {
+                id: school._id,
+                name: school.schoolName,
+                email: school.user?.email || null,
+                address: school.address,
+                phone: school.phone,
+                language: school.language,
+                subscriptionEndDate: school.subscriptionEndDate,
+                teachersCount: school.teachers?.length || 0
+            },
+            statistics: {
+                totalStudents,
+                totalClasses: 1,
+                statusDistribution: statusCounts,
+                statusPercentage: {
+                    green: totalStudents > 0 ? parseFloat(((statusCounts.green / totalStudents) * 100).toFixed(2)) : 0,
+                    yellow: totalStudents > 0 ? parseFloat(((statusCounts.yellow / totalStudents) * 100).toFixed(2)) : 0,
+                    red: totalStudents > 0 ? parseFloat(((statusCounts.red / totalStudents) * 100).toFixed(2)) : 0,
+                    not_answered: totalStudents > 0 ? parseFloat(((statusCounts.not_answered / totalStudents) * 100).toFixed(2)) : 0
+                }
+            },
+            questions: questions.map(q => ({
+                id: q._id,
+                text: q.text,
+                type: q.type,
+                options: q.options,
+                order: q.order
+            })),
+            classes: [classInfo],
+            generatedAt: new Date().toISOString()
+        };
+    }
 }
 
 module.exports = new ResponseService();
