@@ -735,7 +735,7 @@ export function generateWellnessReportHTML(data, qrCodeDataURL) {
     <div class="container">
         <header class="header">
             <div class="logo-section">
-                <img src="https://firebasestorage.googleapis.com/v0/b/luxor-uni.firebasestorage.app/o/download.png?alt=media&token=f8545be9-1b48-4bb9-9162-79ccb5854593" alt="WeAllBeam Logo" class="logo-image">
+                <img class="logo-image" alt="Logo" src="https://firebasestorage.googleapis.com/v0/b/luxor-uni.firebasestorage.app/o/download.png?alt=media&token=f8545be9-1b48-4bb9-9162-79ccb5854593">
                 <div class="logo-tagline">Class Report - Students Status Overview</div>
             </div>
             ${qrCodeDataURL ? `<div class="qr-code"><img src="${qrCodeDataURL}" alt="Report QR Code"></div>` : ''}
@@ -972,7 +972,7 @@ export function generateClassStudentsStatusReportHTML(data, qrCodeDataURL) {
                 const entries = Object.entries(q.distribution).sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
                 const average = q.total > 0 ? (q.sum / q.total).toFixed(2) : '0';
                 distributionHTML = `
-                    <div class="avg-value">${average}/10</div>
+                 
                     <div style="font-size: 9px; color: var(--gray-500); margin-top: 4px;">
                         ${entries.length > 0 ? entries.map(([val, count]) => `${val}: ${count}`).join(', ') : 'No responses'}
                     </div>
@@ -1085,7 +1085,7 @@ export function generateClassStudentsStatusReportHTML(data, qrCodeDataURL) {
         }
 
         .logo-section { display: flex; flex-direction: column; gap: 8px; }
-        .logo-image { height: 40px; width: auto; }
+        .logo-image { height: auto; width: 170px; }
         .logo-tagline { font-size: 10px; color: var(--gray-600); font-weight: 500; max-width: 250px; line-height: 1.4; }
         .qr-code img { width: 70px; height: 70px; border-radius: 8px; }
 

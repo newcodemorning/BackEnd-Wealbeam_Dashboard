@@ -164,11 +164,7 @@ export function generateWellnessReportHTML(data, qrCodeDataURL) {
             gap: 8px;
         }
 
-        .logo-image {
-            height: 20px;
-            object-fit: contain;
-            border-radius: 8px;
-        }
+  
 
         .logo-tagline {
             font-size: 10px;
@@ -821,7 +817,7 @@ export function generateWellnessReportHTML(data, qrCodeDataURL) {
         <!-- Header -->
         <header class="header">
             <div class="logo-section">
-                <img src="https://media.licdn.com/dms/image/v2/D4D0BAQETzgIJ4yyM2g/company-logo_200_200/company-logo_200_200/0/1718096652188/weallbeam_logo?e=2147483647&v=beta&t=4awN6aJv1K9k3mONOmXv3fYVqH7TJUeV_0F0gzZ5XGA" alt="WeAllBeam Logo" class="logo-image">
+                <img class="logo-image" alt="Logo" src="https://firebasestorage.googleapis.com/v0/b/luxor-uni.firebasestorage.app/o/download.png?alt=media&token=f8545be9-1b48-4bb9-9162-79ccb5854593">
                 <span class="logo-tagline">Students Status Report - Comprehensive Overview</span>
             </div>
             <div class="qr-code">
@@ -1129,7 +1125,7 @@ export function generateClassStudentsStatusReportHTML(data, qrCodeDataURL) {
         }
 
         .logo-section { display: flex; flex-direction: column; gap: 8px; }
-        .logo-image { height: 40px; width: auto; }
+        .logo-image { height: auto; width: 170px; }
         .logo-tagline { font-size: 10px; color: var(--gray-600); font-weight: 500; }
         .qr-code img { width: 70px; height: 70px; border-radius: 8px; }
 
@@ -1456,7 +1452,7 @@ export function generateStudentsStatusReportHTML(data, qrCodeDataURL) {
             margin-bottom: 12px;
         }
         .logo-section { display: flex; flex-direction: column; gap: 8px; }
-        .logo-image { height: 40px; width: auto; }
+        .logo-image { height: auto; width: 170px; }
         .logo-tagline { font-size: 10px; color: var(--gray-600); font-weight: 500; }
         .qr-code img { width: 70px; height: 70px; border-radius: 8px; }
         .report-info {
