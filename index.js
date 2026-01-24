@@ -20,6 +20,7 @@ const QuestionRouter = require('./src/routes/question.router');;
 const BlogRoutes = require('./src/routes/blog.router');;
 const superAdminRouter = require('./src/routes/super-admin.router')
 const IncidentReportRoutes = require('./src/routes/incident.routes');
+const FilteredDataRouter = require('./src/routes/data.router');
 const translateMiddleware = require('./src/common/middleware/translateMiddleware');
 const { createIndexes } = require('./src/models/indexes');
 
@@ -85,8 +86,7 @@ app.use("/pdf", pdfRouter);
 app.use("/incidents", IncidentReportRoutes);
 app.use("/profile", ProfileRoutes);
 app.use("/blog", BlogRoutes);
-
-
+app.use("/filter", FilteredDataRouter);
 
 // ************** Language-based routing ************** //
 
@@ -110,7 +110,7 @@ langRouter.use("/pdf", pdfRouter);
 langRouter.use("/incidents", IncidentReportRoutes);
 langRouter.use("/profile", ProfileRoutes);
 langRouter.use("/blog", BlogRoutes);
-
+langRouter.use("/filter", FilteredDataRouter);
 
 
 app.get('/version', (req, res) => {
