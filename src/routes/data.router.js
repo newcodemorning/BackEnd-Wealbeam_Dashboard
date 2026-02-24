@@ -10,8 +10,8 @@ const router = express.Router();
 router.use(authenticateUser);
 
 // Get all schools with their classes (ID and name only) for filtering
-router.get('/school', authorizeRole(['super-admin', 'school', 'teacher', 'parent']), dataController.GetSchoolsFilter);
-router.get('/school/students', authorizeRole(['super-admin', 'school', 'teacher', 'parent']), dataController.GetSchoolsStudentsFilter);
+router.get('/schools', authorizeRole(['super-admin', 'school', 'teacher', 'parent']), dataController.GetSchoolsFilter);
+router.get('/schools/students', authorizeRole(['super-admin', 'school', 'teacher', 'parent']), dataController.GetSchoolsStudentsFilter);
 
 
 module.exports = router;

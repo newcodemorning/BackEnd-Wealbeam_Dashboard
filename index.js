@@ -23,6 +23,13 @@ const IncidentReportRoutes = require('./src/routes/incident.routes');
 const FilteredDataRouter = require('./src/routes/data.router');
 const translateMiddleware = require('./src/common/middleware/translateMiddleware');
 const { createIndexes } = require('./src/models/indexes');
+const basicAuth = require("express-basic-auth");
+
+
+const swaggerUi = require("swagger-ui-express");
+const YAML = require("yamljs");
+const swaggerDocument = YAML.load("./docs/swagger.yaml");
+
 
 require('dotenv').config();
 const path = require('path');
@@ -52,22 +59,24 @@ app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Request logger middleware
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
-  console.log(`[MAIN] Content-Type: ${req.headers['content-type']}`);
-  console.log(`[MAIN] Has body: ${!!req.body}`);
-  console.log(`[MAIN] Body keys: ${Object.keys(req.body || {}).length}`);
-  next();
-});
+// app.use((req, res, next) => {
+//   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+//   console.log(`[MAIN] Content-Type: ${req.headers['content-type']}`);
+//   console.log(`[MAIN] Has body: ${!!req.body}`);
+//   console.log(`[MAIN] Body keys: ${Object.keys(req.body || {}).length}`);
+//   next();
+// });
 
 
-app.use((err, req, res, next) => {
-  console.error(`[ERROR] ${err.message}`);
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
-});
+// app.use((err, req, res, next) => {
+//   console.error(`[ERROR] ${err.message}`);
+//   console.error(err.stack);
+//   res.status(500).json({ error: 'Something went wrong!' });
+// });
 
-
+app.use("/api-docs", basicAuth({ users: { admin: "conf1234", }, challenge: true, }),
+  swaggerUi.serve, swaggerUi.setup(swaggerDocument)
+);
 app.get("/", appInfo);
 app.use("/auth", authRoutes);
 app.use("/faqs", faqsRoutes);
@@ -111,6 +120,7 @@ langRouter.use("/incidents", IncidentReportRoutes);
 langRouter.use("/profile", ProfileRoutes);
 langRouter.use("/blog", BlogRoutes);
 langRouter.use("/filter", FilteredDataRouter);
+
 
 
 app.get('/version', (req, res) => {

@@ -1,0 +1,43 @@
+get:
+  summary: Get all users
+  tags:
+    - Users
+  responses:
+    "200":
+      description: Users list
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "../schemas/user.yaml"
+    "500":
+      description: Server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Something went wrong!"
+  security:
+    - bearerAuth: []
+post:
+  summary: Create a new user
+  tags:
+    - Users
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "../schemas/user.yaml"
+  responses:
+    "201":
+      description: User created
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/user.yaml"
+    

@@ -267,3 +267,25 @@ exports.getClassStudentsStatusPDF = async (req, res) => {
         });
     }
 };
+
+/**
+ * Get all students status for a single class
+ * Returns school info, class info, and students with their detailed response status including questions and answers
+ */
+exports.getClassStudentsStatus = async (req, res) => {
+    try {
+        const classId = req.params.id;
+
+        const result = await responseService.getClassStudentsStatus(classId);
+
+        res.json({
+            success: true,
+            data: result
+        });
+    } catch (error) {
+        res.status(error.message === 'Class not found' ? 404 : 500).json({
+            success: false,
+            error: error.message
+        });
+    }
+};

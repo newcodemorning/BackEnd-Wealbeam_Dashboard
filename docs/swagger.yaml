@@ -1,0 +1,3685 @@
+openapi: 3.0.3
+info:
+  title: WeAllBeam API
+  description: |
+    Educational management system API for schools, teachers, students, and parents.
+
+    ## Language Support
+    API supports multilingual content. Use language prefix in URLs:
+    - English: `/en/endpoint`
+    - Arabic: `/ar/endpoint`
+  version: "5.10.23"
+
+
+servers:
+  - url: http://localhost:4000/ar
+    description: Development server (arabic)
+  - url: http://localhost:4000/en
+    description: Development server (english)
+  - url: https://api.weallbeam.com/ar
+    description: Production server (arabic)
+  - url: https://api.weallbeam.com/en
+    description: Production server (english)
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Profile
+    description: User profile management
+  - name: Schools
+    description: School management
+  - name: Teachers
+    description: Teacher management
+  - name: Students
+    description: Student management
+  - name: Parents
+    description: Parent management
+  - name: Classes
+    description: Class management
+  - name: Questions
+    description: Forms and questions management
+  - name: Responses
+    description: Student responses and assessments
+  - name: Blog
+    description: Blog post management
+  - name: PDF
+    description: PDF resource management
+  - name: Tickets
+    description: Support ticket system
+  - name: Incidents
+    description: Incident reporting
+  - name: Forum
+    description: Community forum
+  - name: FAQ
+    description: Frequently asked questions
+  - name: Contacts
+    description: Contact messages
+  - name: Super Admin
+    description: Super administrator functions
+  - name: Filter
+    description: Data filtering endpoints
+
+paths:
+  # ==================== Authentication ====================
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: User login
+      description: Authenticate user with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: admin@school.com
+                password:
+                  type: string
+                  format: password
+                  example: password123
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Login successful
+                  id:
+                    type: string
+                    example: 507f1f77bcf86cd799439011
+                  role:
+                    type: string
+                    enum: [super-admin, school, teacher, student, parent]
+                  roleId:
+                    type: string
+                    example: 507f1f77bcf86cd799439012
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /auth/password/reset:
+    post:
+      tags: [Authentication]
+      summary: Change password
+      description: Change user password (requires authentication)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword:
+                  type: string
+                  format: password
+                newPassword:
+                  type: string
+                  format: password
+                  minLength: 6
+      responses:
+        "200":
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Password changed successfully
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+
+  # ==================== Profile ====================
+  /profile:
+    get:
+      tags: [Profile]
+      summary: Get user profile
+      description: Get current user's profile information based on role
+      responses:
+        "200":
+          description: Profile information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+    put:
+      tags: [Profile]
+      summary: Update user profile
+      description: Update current user's profile information
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                phone:
+                  type: string
+                photo:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileResponse"
+
+  # ==================== Super Admin ====================
+  /super-admin:
+    post:
+      tags: [Super Admin]
+      summary: Create super admin
+      description: Create a new super admin account (super-admin only)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/CreateSuperAdminRequest"
+      responses:
+        "201":
+          description: Super admin created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuperAdmin"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+
+  /super-admin/{id}:
+    get:
+      tags: [Super Admin]
+      summary: Get super admin by ID
+      description: Get super admin details
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Super admin details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuperAdmin"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+    put:
+      tags: [Super Admin]
+      summary: Update super admin
+      description: Update super admin personal information
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/UpdateSuperAdminRequest"
+      responses:
+        "200":
+          description: Super admin updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuperAdmin"
+
+  /super-admin/{id}/change-password:
+    patch:
+      tags: [Super Admin]
+      summary: Change super admin password
+      description: Change super admin password
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [oldPassword, newPassword]
+              properties:
+                oldPassword:
+                  type: string
+                  format: password
+                newPassword:
+                  type: string
+                  format: password
+                  minLength: 6
+      responses:
+        "200":
+          description: Password changed successfully
+
+  # ==================== Schools ====================
+  /school:
+    post:
+      tags: [Schools]
+      summary: Create school
+      description: Create a new school (super-admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSchoolRequest"
+      responses:
+        "201":
+          description: School created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/School"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+
+    get:
+      tags: [Schools]
+      summary: List schools
+      description: Get list of all schools (super-admin only)
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Schools list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  schools:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/School"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+
+  /school/{id}:
+    get:
+      tags: [Schools]
+      summary: Get school by ID
+      description: Get detailed information about a specific school
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: School details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/School"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+    put:
+      tags: [Schools]
+      summary: Update school
+      description: Update school information
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSchoolRequest"
+      responses:
+        "200":
+          description: School updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/School"
+
+    delete:
+      tags: [Schools]
+      summary: Delete school
+      description: Delete a school and all related data
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: School deleted successfully
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+  # ==================== Teachers ====================
+  /teachers:
+    post:
+      tags: [Teachers]
+      summary: Create teacher
+      description: Add a new teacher (super-admin, school only)
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/CreateTeacherRequest"
+      responses:
+        "201":
+          description: Teacher created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Teacher"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+
+    get:
+      tags: [Teachers]
+      summary: List teachers
+      description: Get list of teachers (school can see their teachers)
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Teachers list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Teacher"
+
+  /teachers/{id}:
+    get:
+      tags: [Teachers]
+      summary: Get teacher by ID
+      description: Get teacher details
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Teacher details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Teacher"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+    put:
+      tags: [Teachers]
+      summary: Update teacher
+      description: Update teacher information
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/UpdateTeacherRequest"
+      responses:
+        "200":
+          description: Teacher updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Teacher"
+
+    delete:
+      tags: [Teachers]
+      summary: Delete teacher
+      description: Delete a teacher
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Teacher deleted successfully
+
+  /teachers/school/{schoolId}:
+    get:
+      tags: [Teachers]
+      summary: Get teachers by school
+      description: List teachers belonging to a specific school
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Teachers list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Teacher"
+
+  /teachers/class/{classId}:
+    get:
+      tags: [Teachers]
+      summary: Get teachers by class
+      description: List teachers assigned to a specific class
+      parameters:
+        - name: classId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Teachers list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Teacher"
+
+  # ==================== Students ====================
+  /students:
+    post:
+      tags: [Students]
+      summary: Create student
+      description: Add a new student (super-admin, school, teacher only)
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/CreateStudentRequest"
+      responses:
+        "201":
+          description: Student created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+
+    get:
+      tags: [Students]
+      summary: List students
+      description: Get list of students
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Students list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Student"
+
+  /students/{id}:
+    get:
+      tags: [Students]
+      summary: Get student by ID
+      description: Get student details
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Student details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+    put:
+      tags: [Students]
+      summary: Update student
+      description: Update student information
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/UpdateStudentRequest"
+      responses:
+        "200":
+          description: Student updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+
+    delete:
+      tags: [Students]
+      summary: Delete student
+      description: Delete a student
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Student deleted successfully
+
+  /students/class/{classId}:
+    get:
+      tags: [Students]
+      summary: Get students by class
+      description: List students in a specific class
+      parameters:
+        - name: classId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Students list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Student"
+
+  /students/import:
+    post:
+      tags: [Students]
+      summary: Import students from CSV
+      description: Bulk import students from a CSV file
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Students imported successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  imported:
+                    type: integer
+                  failed:
+                    type: integer
+
+  /students/export:
+    get:
+      tags: [Students]
+      summary: Export students to CSV
+      description: Export students data to a CSV file
+      responses:
+        "200":
+          description: CSV file
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+
+  # ==================== Parents ====================
+  /parent/register:
+    post:
+      tags: [Parents]
+      summary: Register parent
+      description: Parent self-registration (no auth required)
+      security: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/CreateParentRequest"
+      responses:
+        "201":
+          description: Parent registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Parent"
+
+  /parent:
+    post:
+      tags: [Parents]
+      summary: Create parent
+      description: Add a new parent (super-admin, school, teacher only)
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/CreateParentRequest"
+      responses:
+        "201":
+          description: Parent created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Parent"
+
+    get:
+      tags: [Parents]
+      summary: List parents
+      description: Get list of parents
+      responses:
+        "200":
+          description: Parents list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Parent"
+
+  /parent/{id}:
+    get:
+      tags: [Parents]
+      summary: Get parent by ID
+      description: Get parent details
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Parent details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Parent"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+
+    put:
+      tags: [Parents]
+      summary: Update parent
+      description: Update parent information
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/UpdateParentRequest"
+      responses:
+        "200":
+          description: Parent updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Parent"
+
+    delete:
+      tags: [Parents]
+      summary: Delete parent
+      description: Delete a parent (super-admin, school only)
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Parent deleted successfully
+
+  # ==================== Classes ====================
+  /classes:
+    post:
+      tags: [Classes]
+      summary: Create class
+      description: Create a new class (super-admin, school only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateClassRequest"
+      responses:
+        "201":
+          description: Class created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Class"
+
+    get:
+      tags: [Classes]
+      summary: List classes
+      description: Get list of all classes
+      responses:
+        "200":
+          description: Classes list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Class"
+
+  /classes/{id}:
+    get:
+      tags: [Classes]
+      summary: Get class by ID
+      description: Get class details
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Class details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Class"
+
+    put:
+      tags: [Classes]
+      summary: Update class
+      description: Update class information
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateClassRequest"
+      responses:
+        "200":
+          description: Class updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Class"
+
+    delete:
+      tags: [Classes]
+      summary: Delete class
+      description: Delete a class
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Class deleted successfully
+
+  /classes/school/{schoolId}:
+    get:
+      tags: [Classes]
+      summary: Get classes by school
+      description: List classes belonging to a specific school
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Classes list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Class"
+
+  /classes/{id}/teachers:
+    post:
+      tags: [Classes]
+      summary: Add teacher to class
+      description: Assign a teacher to a class
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [teacherId]
+              properties:
+                teacherId:
+                  type: string
+      responses:
+        "200":
+          description: Teacher added to class
+
+    delete:
+      tags: [Classes]
+      summary: Remove teacher from class
+      description: Remove a teacher from a class
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [teacherId]
+              properties:
+                teacherId:
+                  type: string
+      responses:
+        "200":
+          description: Teacher removed from class
+
+  # ==================== Questions (Forms) ====================
+  /questions:
+    post:
+      tags: [Questions]
+      summary: Create form
+      description: Create a new form with questions (super-admin, school only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFormRequest"
+      responses:
+        "201":
+          description: Form created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Form"
+
+    get:
+      tags: [Questions]
+      summary: List all forms
+      description: Get list of all available forms
+      responses:
+        "200":
+          description: Forms list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Form"
+
+  /questions/daily:
+    get:
+      tags: [Questions]
+      summary: Get daily form
+      description: Get the daily assessment form for students
+      responses:
+        "200":
+          description: Daily form
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Form"
+
+  /questions/{subject}:
+    get:
+      tags: [Questions]
+      summary: Get form by subject
+      description: Get form by subject name
+      parameters:
+        - name: subject
+          in: path
+          required: true
+          schema:
+            type: string
+          example: daily
+      responses:
+        "200":
+          description: Form details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Form"
+
+    put:
+      tags: [Questions]
+      summary: Update form by subject
+      description: Update form questions and settings
+      parameters:
+        - name: subject
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFormRequest"
+      responses:
+        "200":
+          description: Form updated successfully
+
+    delete:
+      tags: [Questions]
+      summary: Delete form by subject
+      description: Delete a form
+      parameters:
+        - name: subject
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Form deleted successfully
+
+  /questions/id/{id}:
+    get:
+      tags: [Questions]
+      summary: Get form by ID
+      description: Get form by MongoDB ID
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Form details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Form"
+
+    put:
+      tags: [Questions]
+      summary: Update form by ID
+      description: Update form by MongoDB ID
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFormRequest"
+      responses:
+        "200":
+          description: Form updated successfully
+
+    delete:
+      tags: [Questions]
+      summary: Delete form by ID
+      description: Delete form by MongoDB ID
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Form deleted successfully
+
+  # ==================== Responses ====================
+  /responses/submit:
+    post:
+      tags: [Responses]
+      summary: Submit form response
+      description: Submit answers to a form (students only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitResponseRequest"
+      responses:
+        "201":
+          description: Response submitted successfully
+        "208":
+          description: Already submitted today
+        "400":
+          $ref: "#/components/responses/ValidationError"
+
+  /responses/{id}:
+    get:
+      tags: [Responses]
+      summary: Get school statistics
+      description: Get response statistics for a school by date range
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+        - name: fromDay
+          in: query
+          schema:
+            type: string
+            format: date
+          example: "2024-01-01"
+        - name: toDay
+          in: query
+          schema:
+            type: string
+            format: date
+          example: "2024-01-31"
+      responses:
+        "200":
+          description: School statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchoolStatistics"
+
+  /responses/daily/{id}:
+    get:
+      tags: [Responses]
+      summary: Get daily statistics
+      description: Get daily response statistics for a school
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+        - name: fromDay
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: toDay
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Daily statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyStatistics"
+
+  /responses/daily/pdf/{id}:
+    get:
+      tags: [Responses]
+      summary: Get daily statistics PDF
+      description: Generate and download daily statistics as PDF report
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+        - name: fromDay
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: toDay
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: PDF report generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportResponse"
+
+  /responses/student-status/{studentId}:
+    get:
+      tags: [Responses]
+      summary: Get student status
+      description: Get student's latest response and status
+      parameters:
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Student status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudentStatus"
+
+  /responses/school-students-status/{id}:
+    get:
+      tags: [Responses]
+      summary: Get school students status
+      description: Get all students status for a school
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: School students status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchoolStudentsStatus"
+
+  /responses/school-students-status/pdf/{id}:
+    get:
+      tags: [Responses]
+      summary: Get school students status PDF
+      description: Generate school students status PDF report
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: PDF report generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportResponse"
+
+  /responses/class-students-status/{id}:
+    get:
+      tags: [Responses]
+      summary: Get class students status
+      description: Get all students status for a class
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Class students status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClassStudentsStatus"
+
+  /responses/class-students-status/pdf/{id}:
+    get:
+      tags: [Responses]
+      summary: Get class students status PDF
+      description: Generate class students status PDF report
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: PDF report generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportResponse"
+
+  # ==================== Blog ====================
+  /blog:
+    post:
+      tags: [Blog]
+      summary: Create blog post
+      description: Create a new blog post (super-admin only)
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/CreateBlogRequest"
+      responses:
+        "201":
+          description: Blog post created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Blog"
+
+    get:
+      tags: [Blog]
+      summary: List blog posts
+      description: Get paginated list of blog posts (public)
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: visibility
+          in: query
+          schema:
+            type: string
+            enum: [public, private, both]
+      responses:
+        "200":
+          description: Blog posts list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlogListResponse"
+
+  /blog/admin:
+    get:
+      tags: [Blog]
+      summary: List blog posts (admin)
+      description: Get all blog posts for admin dashboard
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: author
+          in: query
+          schema:
+            type: string
+        - name: visibility
+          in: query
+          schema:
+            type: string
+            enum: [public, private, both]
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: isFeatured
+          in: query
+          schema:
+            type: boolean
+        - name: isPinned
+          in: query
+          schema:
+            type: boolean
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Blog posts list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlogListResponse"
+
+  /blog/admin/{id}:
+    get:
+      tags: [Blog]
+      summary: Get blog post for admin
+      description: Get blog post with all fields for editing
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Blog post details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlogAdmin"
+
+  /blog/check-slug/{slug}:
+    get:
+      tags: [Blog]
+      summary: Check slug availability
+      description: Check if a blog slug is available
+      security: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Slug availability
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  valid:
+                    type: boolean
+
+  /blog/filter/data:
+    get:
+      tags: [Blog]
+      summary: Get filter options
+      description: Get available filter options for blogs
+      security: []
+      responses:
+        "200":
+          description: Filter options
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlogFilterOptions"
+
+  /blog/slug/{slug}:
+    get:
+      tags: [Blog]
+      summary: Get blog post by slug
+      description: Get blog post by URL slug
+      security: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Blog post details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Blog"
+
+  /blog/{id}:
+    get:
+      tags: [Blog]
+      summary: Get blog post by ID
+      description: Get detailed blog post information
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Blog post details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Blog"
+
+    put:
+      tags: [Blog]
+      summary: Update blog post
+      description: Update existing blog post
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/UpdateBlogRequest"
+      responses:
+        "200":
+          description: Blog post updated successfully
+
+    delete:
+      tags: [Blog]
+      summary: Delete blog post
+      description: Delete a blog post and associated files
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Blog post deleted successfully
+
+  # ==================== PDF ====================
+  /pdf/upload:
+    post:
+      tags: [PDF]
+      summary: Upload PDF
+      description: Upload a new PDF document
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/UploadPDFRequest"
+      responses:
+        "201":
+          description: PDF uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PDF"
+
+  /pdf:
+    get:
+      tags: [PDF]
+      summary: List PDFs
+      description: Get paginated list of PDFs
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: targetSchools
+          in: query
+          schema:
+            type: string
+        - name: supportedLanguages
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: PDFs list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PDFListResponse"
+
+  /pdf/dashboard:
+    get:
+      tags: [PDF]
+      summary: List PDFs (dashboard)
+      description: Get all PDFs for admin dashboard
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: isVisible
+          in: query
+          schema:
+            type: boolean
+        - name: isPublic
+          in: query
+          schema:
+            type: boolean
+        - name: uploadedBy
+          in: query
+          schema:
+            type: string
+        - name: targetSchools
+          in: query
+          schema:
+            type: string
+        - name: supportedLanguages
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: PDFs list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PDFListResponse"
+
+  /pdf/filter/options:
+    get:
+      tags: [PDF]
+      summary: Get PDF filter options
+      description: Get available filter options for PDFs
+      responses:
+        "200":
+          description: Filter options
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PDFFilterOptions"
+
+  /pdf/admin/{id}:
+    get:
+      tags: [PDF]
+      summary: Get PDF for admin
+      description: Get PDF with all data for editing
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: PDF details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PDFAdmin"
+
+  /pdf/dashboard/{id}:
+    get:
+      tags: [PDF]
+      summary: Get PDF for dashboard
+      description: Get PDF with all language data
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: PDF details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PDFAdmin"
+
+  /pdf/download/{id}:
+    get:
+      tags: [PDF]
+      summary: Download PDF
+      description: Download a PDF file
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: PDF file download
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  /pdf/{id}:
+    get:
+      tags: [PDF]
+      summary: Get PDF by ID
+      description: Get PDF details (public view)
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: PDF details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PDF"
+
+    put:
+      tags: [PDF]
+      summary: Update PDF
+      description: Update PDF metadata and files
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/UpdatePDFRequest"
+      responses:
+        "200":
+          description: PDF updated successfully
+
+    delete:
+      tags: [PDF]
+      summary: Delete PDF
+      description: Delete a PDF document
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: PDF deleted successfully
+
+  /pdf/migrate/temp/data:
+    post:
+      tags: [PDF]
+      summary: Migrate PDFs
+      description: Migrate old PDFs to multilingual format (super-admin only)
+      responses:
+        "200":
+          description: Migration completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  migrated:
+                    type: integer
+
+  # ==================== Tickets ====================
+  /ticket/open-ticket:
+    post:
+      tags: [Tickets]
+      summary: Open ticket
+      description: Create a new support ticket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTicketRequest"
+      responses:
+        "201":
+          description: Ticket created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ticket"
+
+  /ticket/my-tickets:
+    get:
+      tags: [Tickets]
+      summary: Get my tickets
+      description: Get current user's tickets
+      responses:
+        "200":
+          description: Tickets list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Ticket"
+
+  /ticket:
+    get:
+      tags: [Tickets]
+      summary: List all tickets
+      description: Get all tickets (super-admin only)
+      responses:
+        "200":
+          description: Tickets list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Ticket"
+
+  /ticket/{id}:
+    get:
+      tags: [Tickets]
+      summary: Get ticket by ID
+      description: Get ticket details
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Ticket details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ticket"
+
+  /ticket/{id}/reply:
+    post:
+      tags: [Tickets]
+      summary: Reply to ticket
+      description: Add a reply to a ticket
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicketReplyRequest"
+      responses:
+        "200":
+          description: Reply added successfully
+
+  /ticket/{id}/close:
+    patch:
+      tags: [Tickets]
+      summary: Close ticket
+      description: Close a support ticket
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Ticket closed successfully
+
+  /ticket/{id}/status:
+    patch:
+      tags: [Tickets]
+      summary: Update ticket status
+      description: Update ticket status (super-admin only)
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTicketStatusRequest"
+      responses:
+        "200":
+          description: Status updated successfully
+
+  /ticket/{id}/priority:
+    patch:
+      tags: [Tickets]
+      summary: Update ticket priority
+      description: Update ticket priority (super-admin only)
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTicketPriorityRequest"
+      responses:
+        "200":
+          description: Priority updated successfully
+
+  # ==================== Incidents ====================
+  /incidents:
+    post:
+      tags: [Incidents]
+      summary: Create incident
+      description: Report a new incident
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateIncidentRequest"
+      responses:
+        "201":
+          description: Incident created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Incident"
+
+  /incidents/student/{studentId}:
+    get:
+      tags: [Incidents]
+      summary: Get student incidents
+      description: Get all incidents for a student
+      parameters:
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Incidents list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Incident"
+
+  /incidents/{incidentId}:
+    get:
+      tags: [Incidents]
+      summary: Get incident by ID
+      description: Get incident details
+      parameters:
+        - name: incidentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Incident details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Incident"
+
+    put:
+      tags: [Incidents]
+      summary: Update incident
+      description: Update incident information
+      parameters:
+        - name: incidentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateIncidentRequest"
+      responses:
+        "200":
+          description: Incident updated successfully
+
+    delete:
+      tags: [Incidents]
+      summary: Delete incident
+      description: Delete an incident
+      parameters:
+        - name: incidentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Incident deleted successfully
+
+  # ==================== Forum ====================
+  /forum:
+    post:
+      tags: [Forum]
+      summary: Create forum post
+      description: Create a new forum post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateForumPostRequest"
+      responses:
+        "201":
+          description: Post created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForumPost"
+
+    get:
+      tags: [Forum]
+      summary: List forum posts
+      description: Get all forum posts
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Posts list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ForumPost"
+
+  /forum/{id}:
+    get:
+      tags: [Forum]
+      summary: Get post with replies
+      description: Get forum post with all replies
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Post with replies
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForumPostWithReplies"
+
+  /forum/{id}/reply:
+    post:
+      tags: [Forum]
+      summary: Add reply
+      description: Add a reply to a forum post
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForumReplyRequest"
+      responses:
+        "201":
+          description: Reply added successfully
+
+  /forum/{id}/like:
+    post:
+      tags: [Forum]
+      summary: Toggle like on post
+      description: Like or unlike a forum post
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Like toggled
+
+  /forum/{id}/reply/{replyId}/like:
+    post:
+      tags: [Forum]
+      summary: Toggle like on reply
+      description: Like or unlike a reply
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+        - name: replyId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Like toggled
+
+  # ==================== FAQ ====================
+  /faqs:
+    post:
+      tags: [FAQ]
+      summary: Create FAQ
+      description: Create a new FAQ entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFAQRequest"
+      responses:
+        "201":
+          description: FAQ created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FAQ"
+
+    get:
+      tags: [FAQ]
+      summary: List FAQs
+      description: Get all FAQs
+      security: []
+      responses:
+        "200":
+          description: FAQs list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FAQ"
+
+  /faqs/{id}:
+    put:
+      tags: [FAQ]
+      summary: Update FAQ
+      description: Update FAQ entry
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFAQRequest"
+      responses:
+        "200":
+          description: FAQ updated successfully
+
+    delete:
+      tags: [FAQ]
+      summary: Delete FAQ
+      description: Delete FAQ entry
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: FAQ deleted successfully
+
+  # ==================== Contacts ====================
+  /contacts:
+    post:
+      tags: [Contacts]
+      summary: Create contact message
+      description: Submit a contact message
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContactRequest"
+      responses:
+        "201":
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contact"
+
+    get:
+      tags: [Contacts]
+      summary: List contact messages
+      description: Get all contact messages (super-admin only)
+      responses:
+        "200":
+          description: Messages list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Contact"
+
+  # ==================== Filter (Data) ====================
+  /filter/schools:
+    get:
+      tags: [Filter]
+      summary: Get schools for filter
+      description: Get schools list for dropdown filters
+      responses:
+        "200":
+          description: Schools list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    _id:
+                      type: string
+                    name:
+                      type: string
+
+  /filter/classes:
+    get:
+      tags: [Filter]
+      summary: Get classes for filter
+      description: Get classes list for dropdown filters
+      parameters:
+        - name: schoolId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Classes list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    _id:
+                      type: string
+                    name:
+                      type: string
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    IdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^[0-9a-fA-F]{24}$"
+      example: 507f1f77bcf86cd799439011
+
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 10
+
+  responses:
+    UnauthorizedError:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Unauthorized
+
+    ForbiddenError:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Forbidden
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Resource not found
+
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    field:
+                      type: string
+                    message:
+                      type: string
+
+    BadRequestError:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              message:
+                type: string
+
+  schemas:
+    # ==================== Core Models ====================
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [super-admin, school, teacher, student, parent]
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    MultilingualText:
+      type: object
+      properties:
+        en:
+          type: string
+        ar:
+          type: string
+      required: [en]
+
+    # ==================== Super Admin ====================
+    SuperAdmin:
+      type: object
+      properties:
+        _id:
+          type: string
+        user:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        photo:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateSuperAdminRequest:
+      type: object
+      required: [email, password, firstName, lastName]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+
+    UpdateSuperAdminRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        photo:
+          type: string
+          format: binary
+
+    # ==================== School ====================
+    School:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+        principalName:
+          type: string
+        established:
+          type: string
+          format: date
+        website:
+          type: string
+        logo:
+          type: string
+        description:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateSchoolRequest:
+      type: object
+      required: [name, email, principalName]
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        principalName:
+          type: string
+        established:
+          type: string
+          format: date
+        website:
+          type: string
+        description:
+          type: string
+
+    UpdateSchoolRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+        principalName:
+          type: string
+        website:
+          type: string
+        description:
+          type: string
+        isActive:
+          type: boolean
+
+    # ==================== Teacher ====================
+    Teacher:
+      type: object
+      properties:
+        _id:
+          type: string
+        user:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        photo:
+          type: string
+        school:
+          type: string
+        classes:
+          type: array
+          items:
+            type: string
+        subjects:
+          type: array
+          items:
+            type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateTeacherRequest:
+      type: object
+      required: [email, password, firstName, lastName, school]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        school:
+          type: string
+        subjects:
+          type: array
+          items:
+            type: string
+        photo:
+          type: string
+          format: binary
+
+    UpdateTeacherRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        subjects:
+          type: array
+          items:
+            type: string
+        isActive:
+          type: boolean
+        photo:
+          type: string
+          format: binary
+
+    # ==================== Student ====================
+    Student:
+      type: object
+      properties:
+        _id:
+          type: string
+        user:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        photo:
+          type: string
+        school:
+          type: string
+        class:
+          type: string
+        grade:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [male, female]
+        parent:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateStudentRequest:
+      type: object
+      required: [email, password, firstName, lastName, school, class]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        school:
+          type: string
+        class:
+          type: string
+        grade:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [male, female]
+        parent:
+          type: string
+        photo:
+          type: string
+          format: binary
+
+    UpdateStudentRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        class:
+          type: string
+        grade:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [male, female]
+        parent:
+          type: string
+        isActive:
+          type: boolean
+        photo:
+          type: string
+          format: binary
+
+    # ==================== Parent ====================
+    Parent:
+      type: object
+      properties:
+        _id:
+          type: string
+        user:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        secondPhone:
+          type: string
+        photo:
+          type: string
+        children:
+          type: array
+          items:
+            type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateParentRequest:
+      type: object
+      required: [email, password, firstName, lastName]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        secondPhone:
+          type: string
+        photo:
+          type: string
+          format: binary
+
+    UpdateParentRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        secondPhone:
+          type: string
+        isActive:
+          type: boolean
+        photo:
+          type: string
+          format: binary
+
+    # ==================== Class ====================
+    Class:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        school:
+          type: string
+        grade:
+          type: string
+        section:
+          type: string
+        teachers:
+          type: array
+          items:
+            type: string
+        studentsCount:
+          type: integer
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateClassRequest:
+      type: object
+      required: [name, school]
+      properties:
+        name:
+          type: string
+        school:
+          type: string
+        grade:
+          type: string
+        section:
+          type: string
+
+    UpdateClassRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        grade:
+          type: string
+        section:
+          type: string
+        isActive:
+          type: boolean
+
+    # ==================== Questions/Forms ====================
+    Question:
+      type: object
+      properties:
+        _id:
+          type: string
+        text:
+          $ref: "#/components/schemas/MultilingualText"
+        type:
+          type: string
+          enum: [slider, yesno, dropdown, radiobutton]
+        order:
+          type: integer
+          minimum: 1
+        dangerAnswer:
+          type: string
+        options:
+          type: array
+          items:
+            type: object
+            properties:
+              text:
+                $ref: "#/components/schemas/MultilingualText"
+              name:
+                $ref: "#/components/schemas/MultilingualText"
+              isDanger:
+                type: boolean
+
+    Form:
+      type: object
+      properties:
+        _id:
+          type: string
+        subject:
+          type: string
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Question"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateFormRequest:
+      type: object
+      required: [subject, questions]
+      properties:
+        subject:
+          type: string
+          pattern: "^[a-zA-Z0-9-_]+$"
+        questions:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [text, type, order]
+            properties:
+              text:
+                $ref: "#/components/schemas/MultilingualText"
+              type:
+                type: string
+                enum: [slider, yesno, dropdown, radiobutton]
+              order:
+                type: integer
+                minimum: 1
+              dangerAnswer:
+                type: string
+              options:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    text:
+                      $ref: "#/components/schemas/MultilingualText"
+                    name:
+                      $ref: "#/components/schemas/MultilingualText"
+                    isDanger:
+                      type: boolean
+
+    UpdateFormRequest:
+      type: object
+      properties:
+        questions:
+          type: array
+          items:
+            type: object
+            properties:
+              text:
+                $ref: "#/components/schemas/MultilingualText"
+              type:
+                type: string
+                enum: [slider, yesno, dropdown, radiobutton]
+              order:
+                type: integer
+              dangerAnswer:
+                type: string
+              options:
+                type: array
+                items:
+                  type: object
+
+    # ==================== Responses ====================
+    Response:
+      type: object
+      properties:
+        _id:
+          type: string
+        student:
+          type: string
+        form:
+          type: string
+        answers:
+          type: array
+          items:
+            type: object
+            properties:
+              question:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  text:
+                    type: string
+                  type:
+                    type: string
+              answer:
+                type: string
+              status:
+                type: string
+                enum: [green, yellow, red]
+              trend:
+                type: string
+                enum: [improving, worsening, stable, changed]
+        timestamp:
+          type: string
+          format: date-time
+
+    SubmitResponseRequest:
+      type: object
+      required: [form, answers]
+      properties:
+        form:
+          type: string
+        answers:
+          type: array
+          items:
+            type: object
+            required: [question, answer]
+            properties:
+              question:
+                type: object
+                required: [id, text, type]
+                properties:
+                  id:
+                    type: string
+                  text:
+                    type: string
+                  type:
+                    type: string
+              answer:
+                type: string
+
+    SchoolStatistics:
+      type: object
+      properties:
+        schoolId:
+          type: string
+        dateRange:
+          type: object
+          properties:
+            from:
+              type: string
+              format: date
+            to:
+              type: string
+              format: date
+        totalResponses:
+          type: integer
+        totalAverage:
+          type: number
+        questionsTrend:
+          type: array
+          items:
+            type: object
+        classesOverview:
+          type: array
+          items:
+            type: object
+        riskAlerts:
+          type: array
+          items:
+            type: object
+
+    DailyStatistics:
+      type: object
+      properties:
+        schoolId:
+          type: string
+        date:
+          type: string
+          format: date
+        totalResponses:
+          type: integer
+        questionsBreakdown:
+          type: array
+          items:
+            type: object
+
+    StudentStatus:
+      type: object
+      properties:
+        student:
+          $ref: "#/components/schemas/Student"
+        subject:
+          type: string
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Question"
+        lastResponse:
+          type: object
+          nullable: true
+          properties:
+            timestamp:
+              type: string
+              format: date-time
+            answers:
+              type: array
+              items:
+                type: object
+
+    SchoolStudentsStatus:
+      type: object
+      properties:
+        school:
+          $ref: "#/components/schemas/School"
+        classes:
+          type: array
+          items:
+            type: object
+            properties:
+              class:
+                $ref: "#/components/schemas/Class"
+              students:
+                type: array
+                items:
+                  type: object
+
+    ClassStudentsStatus:
+      type: object
+      properties:
+        class:
+          $ref: "#/components/schemas/Class"
+        students:
+          type: array
+          items:
+            type: object
+            properties:
+              student:
+                $ref: "#/components/schemas/Student"
+              status:
+                type: string
+              lastResponse:
+                type: object
+
+    ReportResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        filePath:
+          type: string
+        fileName:
+          type: string
+        downloadUrl:
+          type: string
+        fileType:
+          type: string
+          enum: [PDF, HTML]
+        isPDF:
+          type: boolean
+
+    # ==================== Blog ====================
+    Blog:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        slug:
+          type: string
+        category:
+          type: string
+        subcategory:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        cover:
+          type: string
+        images:
+          type: array
+          items:
+            type: string
+        attachments:
+          type: array
+          items:
+            type: string
+        visibility:
+          type: string
+          enum: [public, private, both]
+        isFeatured:
+          type: boolean
+        isPinned:
+          type: boolean
+        viewCount:
+          type: integer
+        author:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    BlogAdmin:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          $ref: "#/components/schemas/MultilingualText"
+        content:
+          $ref: "#/components/schemas/MultilingualText"
+        slug:
+          type: string
+        category:
+          type: string
+        subcategory:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        cover:
+          type: string
+        images:
+          type: array
+          items:
+            type: string
+        attachments:
+          type: array
+          items:
+            type: string
+        visibility:
+          type: string
+        status:
+          type: string
+        allowedSchools:
+          type: array
+          items:
+            type: string
+        isFeatured:
+          type: boolean
+        isPinned:
+          type: boolean
+        viewCount:
+          type: integer
+        author:
+          type: object
+          properties:
+            _id:
+              type: string
+            name:
+              type: string
+            email:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateBlogRequest:
+      type: object
+      properties:
+        title[en]:
+          type: string
+        title[ar]:
+          type: string
+        content[en]:
+          type: string
+        content[ar]:
+          type: string
+        category:
+          type: string
+        subcategory:
+          type: string
+        tags:
+          type: string
+          description: Comma-separated tags
+        slug:
+          type: string
+        visibility:
+          type: string
+          enum: [public, private, both]
+        allowedSchools:
+          type: string
+          description: Comma-separated school IDs
+        status:
+          type: string
+        isFeatured:
+          type: boolean
+        isPinned:
+          type: boolean
+        cover:
+          type: string
+          format: binary
+        images:
+          type: array
+          items:
+            type: string
+            format: binary
+        attachments:
+          type: array
+          items:
+            type: string
+            format: binary
+
+    UpdateBlogRequest:
+      type: object
+      properties:
+        title[en]:
+          type: string
+        title[ar]:
+          type: string
+        content[en]:
+          type: string
+        content[ar]:
+          type: string
+        category:
+          type: string
+        subcategory:
+          type: string
+        tags:
+          type: string
+        slug:
+          type: string
+        visibility:
+          type: string
+          enum: [public, private, both]
+        allowedSchools:
+          type: string
+        status:
+          type: string
+        isFeatured:
+          type: boolean
+        isPinned:
+          type: boolean
+        cover:
+          type: string
+          format: binary
+        images:
+          type: array
+          items:
+            type: string
+            format: binary
+        attachments:
+          type: array
+          items:
+            type: string
+            format: binary
+
+    BlogListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        pageCount:
+          type: integer
+        nextPage:
+          type: integer
+          nullable: true
+        prevPage:
+          type: integer
+          nullable: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Blog"
+
+    BlogFilterOptions:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            categories:
+              type: array
+              items:
+                type: string
+            authors:
+              type: array
+              items:
+                type: object
+                properties:
+                  _id:
+                    type: string
+                  firstName:
+                    type: string
+                  lastName:
+                    type: string
+            visibilities:
+              type: array
+              items:
+                type: string
+
+    # ==================== PDF ====================
+    PDF:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        fileName:
+          type: string
+        filePath:
+          type: string
+        coverImage:
+          type: string
+        supportedLanguages:
+          type: array
+          items:
+            type: string
+        targetSchools:
+          type: array
+          items:
+            type: string
+        isPublic:
+          type: boolean
+        isVisible:
+          type: boolean
+        viewCount:
+          type: integer
+        uploadedBy:
+          type: string
+        uploadedAt:
+          type: string
+          format: date-time
+
+    PDFAdmin:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          $ref: "#/components/schemas/MultilingualText"
+        description:
+          $ref: "#/components/schemas/MultilingualText"
+        fileName:
+          type: string
+        filePath:
+          type: string
+        coverImage:
+          type: string
+        supportedLanguages:
+          type: array
+          items:
+            type: string
+        targetSchools:
+          type: array
+          items:
+            type: string
+        isPublic:
+          type: boolean
+        isVisible:
+          type: boolean
+        viewCount:
+          type: integer
+        uploadedBy:
+          type: object
+        uploadedAt:
+          type: string
+          format: date-time
+
+    UploadPDFRequest:
+      type: object
+      required: [pdf]
+      properties:
+        pdf:
+          type: string
+          format: binary
+        coverImage:
+          type: string
+          format: binary
+        title[en]:
+          type: string
+        title[ar]:
+          type: string
+        description[en]:
+          type: string
+        description[ar]:
+          type: string
+        supportedLanguages:
+          type: string
+          description: Comma-separated languages (en,ar)
+        targetSchools:
+          type: string
+          description: Comma-separated school IDs
+        isPublic:
+          type: boolean
+        isVisible:
+          type: boolean
+
+    UpdatePDFRequest:
+      type: object
+      properties:
+        pdf:
+          type: string
+          format: binary
+        coverImage:
+          type: string
+          format: binary
+        title[en]:
+          type: string
+        title[ar]:
+          type: string
+        description[en]:
+          type: string
+        description[ar]:
+          type: string
+        supportedLanguages:
+          type: string
+        targetSchools:
+          type: string
+        isPublic:
+          type: boolean
+        isVisible:
+          type: boolean
+
+    PDFListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        pageCount:
+          type: integer
+        nextPage:
+          type: integer
+          nullable: true
+        prevPage:
+          type: integer
+          nullable: true
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PDF"
+
+    PDFFilterOptions:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            supportedLanguages:
+              type: array
+              items:
+                type: string
+            targetSchools:
+              type: array
+              items:
+                type: object
+
+    # ==================== Tickets ====================
+    Ticket:
+      type: object
+      properties:
+        _id:
+          type: string
+        category:
+          type: string
+          enum: [academic, financial, behavior, technical, other]
+        title:
+          type: string
+        question:
+          type: string
+        status:
+          type: string
+          enum: [open, pending, closed]
+        priority:
+          type: string
+          enum: [low, medium, high]
+        createdBy:
+          type: string
+        replies:
+          type: array
+          items:
+            type: object
+            properties:
+              message:
+                type: string
+              author:
+                type: string
+              createdAt:
+                type: string
+                format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateTicketRequest:
+      type: object
+      required: [category, title, question]
+      properties:
+        category:
+          type: string
+          enum: [academic, financial, behavior, technical, other]
+        title:
+          type: string
+          minLength: 5
+          maxLength: 200
+        question:
+          type: string
+          minLength: 10
+          maxLength: 2000
+
+    TicketReplyRequest:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 2000
+
+    UpdateTicketStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [open, pending, closed]
+
+    UpdateTicketPriorityRequest:
+      type: object
+      required: [priority]
+      properties:
+        priority:
+          type: string
+          enum: [low, medium, high]
+
+    # ==================== Incidents ====================
+    Incident:
+      type: object
+      properties:
+        _id:
+          type: string
+        student:
+          type: string
+        reporter:
+          type: string
+        type:
+          type: string
+        description:
+          type: string
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        status:
+          type: string
+          enum: [reported, investigating, resolved, closed]
+        actions:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateIncidentRequest:
+      type: object
+      required: [student, type, description]
+      properties:
+        student:
+          type: string
+        type:
+          type: string
+        description:
+          type: string
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+
+    UpdateIncidentRequest:
+      type: object
+      properties:
+        type:
+          type: string
+        description:
+          type: string
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        status:
+          type: string
+          enum: [reported, investigating, resolved, closed]
+        actions:
+          type: array
+          items:
+            type: string
+
+    # ==================== Forum ====================
+    ForumPost:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        author:
+          type: string
+        likes:
+          type: array
+          items:
+            type: string
+        likesCount:
+          type: integer
+        repliesCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    ForumPostWithReplies:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        author:
+          type: object
+        likes:
+          type: array
+          items:
+            type: string
+        replies:
+          type: array
+          items:
+            type: object
+            properties:
+              _id:
+                type: string
+              content:
+                type: string
+              author:
+                type: object
+              likes:
+                type: array
+                items:
+                  type: string
+              createdAt:
+                type: string
+                format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateForumPostRequest:
+      type: object
+      required: [title, content]
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+
+    ForumReplyRequest:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+
+    # ==================== FAQ ====================
+    FAQ:
+      type: object
+      properties:
+        _id:
+          type: string
+        question:
+          $ref: "#/components/schemas/MultilingualText"
+        answer:
+          $ref: "#/components/schemas/MultilingualText"
+        category:
+          type: string
+        order:
+          type: integer
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateFAQRequest:
+      type: object
+      required: [question, answer]
+      properties:
+        question:
+          $ref: "#/components/schemas/MultilingualText"
+        answer:
+          $ref: "#/components/schemas/MultilingualText"
+        category:
+          type: string
+        order:
+          type: integer
+
+    UpdateFAQRequest:
+      type: object
+      properties:
+        question:
+          $ref: "#/components/schemas/MultilingualText"
+        answer:
+          $ref: "#/components/schemas/MultilingualText"
+        category:
+          type: string
+        order:
+          type: integer
+        isActive:
+          type: boolean
+
+    # ==================== Contacts ====================
+    Contact:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        subject:
+          type: string
+        message:
+          type: string
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateContactRequest:
+      type: object
+      required: [name, email, message]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        subject:
+          type: string
+        message:
+          type: string
+
+    # ==================== Profile ====================
+    ProfileResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        photo:
+          type: string
+        role:
+          type: string
+        school:
+          type: object
+          nullable: true
+        class:
+          type: object
+          nullable: true
+
+    # ==================== Common ====================
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        pageCount:
+          type: integer
+        nextPage:
+          type: integer
+          nullable: true
+        prevPage:
+          type: integer
+          nullable: true

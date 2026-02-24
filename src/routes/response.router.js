@@ -38,6 +38,10 @@ router.get('/student-status/:studentId', authorizeRole(['super-admin', 'school',
 router.get('/school-students-status/:id', authorizeRole(['super-admin', 'school', 'teacher']), responseController.getSchoolStudentsStatus);
 
 
+// Get all students status for a class with detailed school, class, and students information
+router.get('/class-students-status/:id', authorizeRole(['super-admin', 'school', 'teacher']), responseController.getClassStudentsStatus);
+
+
 // Get all students status for a school as PDF report
 router.get('/school-students-status/pdf/:id', authorizeRole(['super-admin', 'school', 'teacher']), responseController.getSchoolStudentsStatusPDF);
 
@@ -51,4 +55,4 @@ router.get('/class-students-status/pdf/:id', authorizeRole(['super-admin', 'scho
 // // Get a single response (school can see their responses, teacher can see their responses, parent can see their children's responses)
 // router.get('/:id', authorizeRole(['super-admin', 'school', 'teacher', 'parent']), responseController.getResponse);
 
-module.exports = router; 
+module.exports = router;
