@@ -34,6 +34,11 @@ router.get('/daily/pdf/:id', authorizeRole(['super-admin', 'school', 'teacher', 
 router.get('/student-status/:studentId', authorizeRole(['super-admin', 'school', 'teacher', 'parent']), responseController.getStudentStatus);
 
 
+// Compare student answers between two specific days
+// Query params: day1=YYYY-MM-DD&day2=YYYY-MM-DD
+router.get('/student-status-compare/:studentId', authorizeRole(['super-admin', 'school', 'teacher', 'parent']), responseController.getStudentStatusCompareTwoDays);
+
+
 // Get all students status for a school with detailed school, classes, and students information
 router.get('/school-students-status/:id', authorizeRole(['super-admin', 'school', 'teacher']), responseController.getSchoolStudentsStatus);
 

@@ -187,6 +187,73 @@ class ResponseService {
     }
 
 
+    /**
+     * Compare a student's answers between two specific days.
+     * Returns the same shape as getStudentStatus for each day separately.
+     */
+    async getStudentStatusCompareTwoDays(studentId, day1, day2) {
+        const student = await Student.findById(studentId).populate('class');
+        if (!student) throw new Error('Student not found');
+        if (!student.class) throw new Error('Student is not assigned to any class');
+
+        const questions = await Question.find({ subject: student.class.Subject })
+            .sort({ order: 1 });
+
+        const questionsFormatted = questions.map(q => ({
+            id: q._id,
+            text: q.text,
+            type: q.type,
+            options: q.options,
+            order: q.order
+        }));
+
+        // Helper: fetch the responses for a single day (midnight → 23:59:59)
+        const getDayResponses = async (dayStr) => {
+            const start = new Date(dayStr);
+            const end = new Date(dayStr);
+            end.setHours(23, 59, 59, 999);
+
+            if (isNaN(start.getTime())) {
+                throw new Error(`Invalid date format for "${dayStr}". Use YYYY-MM-DD`);
+            }
+
+            const responses = await Response.find({
+                student: studentId,
+                timestamp: { $gte: start, $lte: end }
+            }).sort({ timestamp: -1 });
+
+            // Take the latest response of that day (same as student-status behaviour)
+            const latest = responses[0] || null;
+
+            return {
+                date: dayStr,
+                responded: !!latest,
+                response: latest ? {
+                    responseId: latest._id,
+                    timestamp: latest.timestamp,
+                    answers: latest.answers
+                } : null
+            };
+        };
+
+        const [result1, result2] = await Promise.all([
+            getDayResponses(day1),
+            getDayResponses(day2)
+        ]);
+
+        return {
+            student: {
+                id: student._id,
+                name: `${student.first_name} ${student.last_name}`,
+                subject: student.class.Subject
+            },
+            questions: questionsFormatted,
+            day1: result1,
+            day2: result2
+        };
+    }
+
+
     async getDailySchoolResponsesStatisticsDD(schoolId, fromDay, toDay) {
 
         /* -------------------- DATE SETUP -------------------- */

@@ -82,6 +82,42 @@ exports.getStudentStatus = async (req, res) => {
 };
 
 
+/**
+ * Compare a student's answers between two specific days.
+ * Query params: day1=YYYY-MM-DD&day2=YYYY-MM-DD
+ */
+exports.getStudentStatusCompareTwoDays = async (req, res) => {
+    try {
+        const { studentId } = req.params;
+        const { day1, day2 } = req.query;
+
+
+        if (!day1 || !day2) {
+            return res.status(400).json({
+                success: false,
+                error: 'Both day1 and day2 query parameters are required (YYYY-MM-DD)'
+            });
+        }
+
+        const result = await responseService.getStudentStatusCompareTwoDays(
+            studentId,
+            day1,
+            day2
+        );
+
+        res.json({
+            success: true,
+            data: result
+        });
+    } catch (error) {
+        res.status(error.message === 'Student not found' ? 404 : 400).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+
+
 exports.getSchoolResponsesStatistics = async (req, res) => {
     try {
         const schoolId = req.params.id;
