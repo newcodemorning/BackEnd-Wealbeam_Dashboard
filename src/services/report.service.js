@@ -5,7 +5,7 @@ import QRCode from 'qrcode';
 // import { generateMockWellnessData } from './mockData.js';
 import { generateWellnessReportHTML as generateDailyReportHTML } from './htmlTemplateForDaily.js';
 import { generateWellnessReportHTML, generateStudentsStatusReportHTML } from './htmlTemplate.js';
-import {  generateClassStudentsStatusReportHTML } from './htmlTemplateClass.js';
+import { generateClassStudentsStatusReportHTML } from './htmlTemplateClass.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,7 +19,7 @@ if (!fs.existsSync(reportsDir)) {
  * Generate wellness analytics report with PDF output
  * @param {Object} apiData - Optional API data in format { success: true, data: {...} }
  */
-export async function generateAnalyticsReport(apiData = null) {
+export async function generateAnalyticsReport(apiData = null, note = null) {
     try {
         // Extract data from API response or use mock data
         const wellnessData = apiData?.data; //|| generateMockWellnessData();
@@ -36,7 +36,7 @@ export async function generateAnalyticsReport(apiData = null) {
         });
 
         // Use the daily template for analytics/wellness reports
-        const htmlContent = generateDailyReportHTML(wellnessData, qrCodeDataURL);
+        const htmlContent = generateDailyReportHTML(wellnessData, qrCodeDataURL, note);
 
         // Generate filename with timestamp
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T');
@@ -127,7 +127,7 @@ export async function generateAnalyticsReport(apiData = null) {
  * Generate students status report with PDF output
  * @param {Object} apiData - API data in format { success: true, data: {...} }
  */
-export async function generateStudentsStatusReport(apiData = null) {
+export async function generateStudentsStatusReport(apiData = null, note = null) {
     try {
         const statusData = apiData?.data;
 
@@ -147,7 +147,7 @@ export async function generateStudentsStatusReport(apiData = null) {
         });
 
         // Generate HTML content
-        const htmlContent = generateStudentsStatusReportHTML(statusData, qrCodeDataURL);
+        const htmlContent = generateStudentsStatusReportHTML(statusData, qrCodeDataURL, note);
 
         // Generate filename with timestamp
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T');
@@ -238,7 +238,7 @@ export async function generateStudentsStatusReport(apiData = null) {
  * Generate class students status report with detailed questions and answers as PDF output
  * @param {Object} apiData - API data in format { success: true, data: {...} }
  */
-export async function generateClassStudentsStatusReport(apiData = null) {
+export async function generateClassStudentsStatusReport(apiData = null, note = null) {
     try {
         const statusData = apiData?.data;
 
@@ -258,7 +258,7 @@ export async function generateClassStudentsStatusReport(apiData = null) {
         });
 
         // Generate HTML content using the new class-specific template
-        const htmlContent = generateClassStudentsStatusReportHTML(statusData, qrCodeDataURL);
+        const htmlContent = generateClassStudentsStatusReportHTML(statusData, qrCodeDataURL, note);
 
         // Generate filename with timestamp
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T');

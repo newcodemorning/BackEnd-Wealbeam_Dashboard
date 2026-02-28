@@ -24,8 +24,8 @@ router.get('/daily/:id', authorizeRole(['super-admin', 'school', 'teacher', 'par
 
 
 
-// Get all responses for school by date range - daily
-router.get('/daily/pdf/:id', authorizeRole(['super-admin', 'school', 'teacher', 'parent']), responseController.getSchoolResponsesStatisticsDailyPDF);
+// Get all responses for school by date range - daily (POST to allow optional note in body)
+router.post('/daily/pdf/:id', authorizeRole(['super-admin', 'school', 'teacher', 'parent']), responseController.getSchoolResponsesStatisticsDailyPDF);
 
 
 
@@ -47,17 +47,11 @@ router.get('/school-students-status/:id', authorizeRole(['super-admin', 'school'
 router.get('/class-students-status/:id', authorizeRole(['super-admin', 'school', 'teacher']), responseController.getClassStudentsStatus);
 
 
-// Get all students status for a school as PDF report
-router.get('/school-students-status/pdf/:id', authorizeRole(['super-admin', 'school', 'teacher']), responseController.getSchoolStudentsStatusPDF);
+// Get all students status for a school as PDF report (POST to allow optional note in body)
+router.post('/school-students-status/pdf/:id', authorizeRole(['super-admin', 'school', 'teacher']), responseController.getSchoolStudentsStatusPDF);
 
 
-// Get all students status for a class as PDF report
-router.get('/class-students-status/pdf/:id', authorizeRole(['super-admin', 'school', 'teacher']), responseController.getClassStudentsStatusPDF);
-
-// // Get all responses for a subject (school can see their responses, teacher can see their responses)
-// router.get('/subject/:subject', authorizeRole(['super-admin', 'school', 'teacher']), responseController.getSubjectResponses);
-
-// // Get a single response (school can see their responses, teacher can see their responses, parent can see their children's responses)
-// router.get('/:id', authorizeRole(['super-admin', 'school', 'teacher', 'parent']), responseController.getResponse);
+// Get all students status for a class as PDF report (POST to allow optional note in body)
+router.post('/class-students-status/pdf/:id', authorizeRole(['super-admin', 'school', 'teacher']), responseController.getClassStudentsStatusPDF);
 
 module.exports = router;

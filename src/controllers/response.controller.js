@@ -180,6 +180,7 @@ exports.getSchoolResponsesStatisticsDailyPDF = async (req, res) => {
 
         const formDay = req.query.fromDay || yesterday.toISOString().split('T')[0];
         const toDay = req.query.toDay || today.toISOString().split('T')[0];
+        const note = req.body?.note || null;
         const schoolName = await School.findById(schoolId);
         const statistics = await responseService.getDailySchoolResponsesStatistics(schoolId, formDay, toDay);
         const result = await generateAnalyticsReport({
@@ -188,7 +189,7 @@ exports.getSchoolResponsesStatisticsDailyPDF = async (req, res) => {
                 schoolName: schoolName.schoolName,
                 ...statistics
             }
-        });
+        }, note);
 
         res.json({
             success: true,
@@ -239,6 +240,7 @@ exports.getSchoolStudentsStatus = async (req, res) => {
 exports.getSchoolStudentsStatusPDF = async (req, res) => {
     try {
         const schoolId = req.params.id;
+        const note = req.body?.note || null;
 
         // Get the students status data
         const statusData = await responseService.getSchoolStudentsStatus(schoolId);
@@ -247,7 +249,7 @@ exports.getSchoolStudentsStatusPDF = async (req, res) => {
         const result = await generateStudentsStatusReport({
             success: true,
             data: statusData
-        });
+        }, note);
 
         res.json({
             success: true,
@@ -275,6 +277,7 @@ exports.getSchoolStudentsStatusPDF = async (req, res) => {
 exports.getClassStudentsStatusPDF = async (req, res) => {
     try {
         const classId = req.params.id;
+        const note = req.body?.note || null;
 
         // Get the class students status data with detailed answers
         const statusData = await responseService.getClassStudentsStatus(classId);
@@ -283,7 +286,7 @@ exports.getClassStudentsStatusPDF = async (req, res) => {
         const result = await generateClassStudentsStatusReport({
             success: true,
             data: statusData
-        });
+        }, note);
 
         res.json({
             success: true,

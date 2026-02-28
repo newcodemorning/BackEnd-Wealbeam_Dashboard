@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export function generateWellnessReportHTML(data, qrCodeDataURL) {
+export function generateWellnessReportHTML(data, qrCodeDataURL, note = null) {
     const { meta, summary, dailyOverview, questionsTrend, classesOverview, riskAlerts, schoolName } = data;
 
     // Provide fallbacks for optional data
@@ -890,6 +890,16 @@ export function generateWellnessReportHTML(data, qrCodeDataURL) {
                     `).join('')}
                 </tbody>
             </table>
+        </section>
+        ` : ''}
+
+        <!-- Note Section -->
+        ${note ? `
+        <section style="margin-top: 24px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--gray-200);">
+                <h2 style="font-size: 16px; font-weight: 700; color: var(--gray-800);">&#x1F4DD; Note</h2>
+            </div>
+            <div style="background: var(--gray-50); border-left: 4px solid var(--primary); border-radius: 8px; padding: 16px; font-size: 13px; color: var(--gray-800); line-height: 1.7; white-space: pre-wrap;">${note}</div>
         </section>
         ` : ''}
 
