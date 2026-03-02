@@ -1085,8 +1085,8 @@ export function generateClassStudentsStatusReportHTML(data, qrCodeDataURL, note 
         }
 
         .logo-section { display: flex; flex-direction: column; gap: 8px; }
-        .logo-image { height: auto; width: 170px; }
-        .logo-tagline { font-size: 10px; color: var(--gray-600); font-weight: 500; max-width: 250px; line-height: 1.4; }
+        .logo-image { height: 20px; object-fit: contain; border-radius: 8px; }
+        .logo-tagline { font-size: 10px; color: var(--gray-600); font-weight: 500; line-height: 1.4; max-width: 250px; }
         .qr-code img { width: 70px; height: 70px; border-radius: 8px; }
 
         .report-info {
@@ -1571,8 +1571,8 @@ export function generateStudentsStatusReportHTML(data, qrCodeDataURL, note = nul
             margin-bottom: 12px;
         }
         .logo-section { display: flex; flex-direction: column; gap: 8px; }
-        .logo-image { height: 40px; width: auto; }
-        .logo-tagline { font-size: 10px; color: var(--gray-600); font-weight: 500; }
+        .logo-image { height: 20px; object-fit: contain; border-radius: 8px; }
+        .logo-tagline { font-size: 10px; color: var(--gray-600); font-weight: 500; line-height: 1.4; max-width: 250px; }
         .qr-code img { width: 70px; height: 70px; border-radius: 8px; }
         .report-info { background: var(--gray-50); border-radius: 12px; padding: 12px; margin-bottom: 18px; }
         .school-details h1 { font-size: 18px; font-weight: 800; color: var(--gray-900); margin-bottom: 4px; }

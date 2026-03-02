@@ -164,7 +164,11 @@ export function generateWellnessReportHTML(data, qrCodeDataURL) {
             gap: 8px;
         }
 
-  
+        .logo-image {
+            height: 20px;
+            object-fit: contain;
+            border-radius: 8px;
+        }
 
         .logo-tagline {
             font-size: 10px;
@@ -814,15 +818,15 @@ export function generateWellnessReportHTML(data, qrCodeDataURL) {
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
         <header class="header">
             <div class="logo-section">
                 <img class="logo-image" alt="Logo" src="https://firebasestorage.googleapis.com/v0/b/luxor-uni.firebasestorage.app/o/download.png?alt=media&token=f8545be9-1b48-4bb9-9162-79ccb5854593">
-                <span class="logo-tagline">Students Status Report - Comprehensive Overview</span>
+                <div class="logo-tagline">
+                    Empowering Mental Wellbeing<br>
+                    for Schools and Organisations
+                </div>
             </div>
-            <div class="qr-code">
-                <img src="${qrCodeDataURL}" alt="Report QR Code">
-            </div>
+            ${qrCodeDataURL ? `<div class="qr-code"><img src="${qrCodeDataURL}" alt="Report QR Code"></div>` : ''}
         </header>
 
         <!-- Report Info -->

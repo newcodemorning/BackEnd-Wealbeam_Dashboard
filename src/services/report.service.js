@@ -6,6 +6,7 @@ import QRCode from 'qrcode';
 import { generateWellnessReportHTML as generateDailyReportHTML } from './htmlTemplateForDaily.js';
 import { generateWellnessReportHTML, generateStudentsStatusReportHTML } from './htmlTemplate.js';
 import { generateClassStudentsStatusReportHTML } from './htmlTemplateClass.js';
+import { generateStudentCompareTwoDaysHTML } from './htmlTemplateStudentCompare.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -340,6 +341,98 @@ export async function generateClassStudentsStatusReport(apiData = null, note = n
 
     } catch (error) {
         console.error('❌ Error generating class students status report:', error);
+        throw error;
+    }
+}
+
+
+/**
+ * Generate a student two-days comparison report as PDF
+ * @param {Object} apiData - { success: true, data: { student, questions, day1, day2 } }
+ */
+export async function generateStudentCompareTwoDaysReport(apiData = null) {
+    try {
+        const compareData = apiData?.data;
+
+        if (!compareData) {
+            throw new Error('No comparison data provided for report generation');
+        }
+
+        // Generate QR Code
+        const reportId = `STUDENT_COMPARE_${Date.now()}`;
+        const qrCodeDataURL = await QRCode.toDataURL(reportId, {
+            width: 200,
+            margin: 1,
+            color: { dark: '#1ba927', light: '#FFFFFF' }
+        });
+
+        const htmlContent = generateStudentCompareTwoDaysHTML(compareData, qrCodeDataURL);
+
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T');
+        const dateStr = timestamp[0];
+        const timeStr = timestamp[1].split('.')[0];
+
+        let finalFilePath, finalFileName;
+        let isPDF = false;
+
+        try {
+            console.log('🔍 Attempting to load Puppeteer for Student Compare Report...');
+            const puppeteer = await import('puppeteer');
+
+            const pdfFileName = `student_compare_report_${dateStr}_${timeStr}.pdf`;
+            const pdfFilePath = path.join(reportsDir, pdfFileName);
+
+            console.log('🚀 Launching Chromium browser...');
+            const browser = await puppeteer.launch({
+                headless: 'new',
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-gpu'
+                ]
+            });
+
+            const page = await browser.newPage();
+            await page.setContent(htmlContent, { waitUntil: 'networkidle0', timeout: 30000 });
+
+            await page.pdf({
+                path: pdfFilePath,
+                format: 'A4',
+                printBackground: true,
+                preferCSSPageSize: false,
+                margin: { top: '6mm', right: '6mm', bottom: '6mm', left: '6mm' }
+            });
+
+            await browser.close();
+            finalFilePath = pdfFilePath;
+            finalFileName = pdfFileName;
+            isPDF = true;
+            console.log(`✅ Student Compare PDF report generated: ${pdfFileName}`);
+        } catch (pdfError) {
+            console.error('❌ PDF generation failed:', pdfError.message);
+            console.log('⚠️ Falling back to HTML format...');
+
+            const htmlFileName = `student_compare_report_${dateStr}_${timeStr}.html`;
+            const htmlFilePath = path.join(reportsDir, htmlFileName);
+            fs.writeFileSync(htmlFilePath, htmlContent, 'utf8');
+
+            finalFilePath = htmlFilePath;
+            finalFileName = htmlFileName;
+            isPDF = false;
+        }
+
+        return {
+            filePath: finalFilePath,
+            fileName: finalFileName,
+            relativePath: path.relative(process.cwd(), finalFilePath),
+            isPDF,
+            fileType: isPDF ? 'PDF' : 'HTML',
+            downloadUrl: `${process.env.ENVIRONMENT === 'production' ? process.env.PROD_BASE_URL : process.env.DEV_BASE_URL}/reports/${finalFileName}`
+        };
+
+    } catch (error) {
+        console.error('❌ Error generating student compare report:', error);
         throw error;
     }
 }

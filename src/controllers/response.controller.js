@@ -1,6 +1,6 @@
 const responseService = require('../services/response.service');
 const Response = require('../models/response.model');
-const { generateAnalyticsReport, generateStudentsStatusReport, generateClassStudentsStatusReport } = require('../services/report.service');
+const { generateAnalyticsReport, generateStudentsStatusReport, generateClassStudentsStatusReport, generateStudentCompareTwoDaysReport } = require('../services/report.service');
 const School = require('../models/school.model');
 
 exports.submitFormResponse = async (req, res) => {
@@ -111,6 +111,57 @@ exports.getStudentStatusCompareTwoDays = async (req, res) => {
         });
     } catch (error) {
         res.status(error.message === 'Student not found' ? 404 : 400).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+
+
+/**
+ * Generate a PDF report comparing a student's answers between two specific days.
+ * Query params: day1=YYYY-MM-DD&day2=YYYY-MM-DD
+ */
+exports.getStudentStatusCompareTwoDaysPDF = async (req, res) => {
+    try {
+        const { studentId } = req.params;
+        const { day1, day2 } = req.query;
+
+        if (!day1 || !day2) {
+            return res.status(400).json({
+                success: false,
+                error: 'Both day1 and day2 query parameters are required (YYYY-MM-DD)'
+            });
+        }
+
+        // Fetch the comparison data
+        const compareData = await responseService.getStudentStatusCompareTwoDays(
+            studentId,
+            day1,
+            day2
+        );
+
+        
+
+        // Generate the PDF
+        const result = await generateStudentCompareTwoDaysReport({
+            success: true,
+            data: compareData
+        });
+
+        res.json({
+            success: true,
+            message: 'Student comparison report generated successfully',
+            data: {
+                fileName: result.fileName,
+                fileType: result.fileType,
+                downloadUrl: result.downloadUrl,
+                generatedAt: new Date().toISOString()
+            },
+            compareData
+        });
+    } catch (error) {
+        res.status(error.message === 'Student not found' ? 404 : 500).json({
             success: false,
             error: error.message
         });
