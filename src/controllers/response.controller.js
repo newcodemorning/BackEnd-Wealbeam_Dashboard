@@ -141,7 +141,7 @@ exports.getStudentStatusCompareTwoDaysPDF = async (req, res) => {
             day2
         );
 
-        
+
 
         // Generate the PDF
         const result = await generateStudentCompareTwoDaysReport({
@@ -232,12 +232,15 @@ exports.getSchoolResponsesStatisticsDailyPDF = async (req, res) => {
         const formDay = req.query.fromDay || yesterday.toISOString().split('T')[0];
         const toDay = req.query.toDay || today.toISOString().split('T')[0];
         const note = req.body?.note || null;
-        const schoolName = await School.findById(schoolId);
+        const school = await School.findById(schoolId);
+        if (!school) {
+            return res.status(404).json({ success: false, error: 'School not found' });
+        }
         const statistics = await responseService.getDailySchoolResponsesStatistics(schoolId, formDay, toDay);
         const result = await generateAnalyticsReport({
             success: true,
             data: {
-                schoolName: schoolName.schoolName,
+                schoolName: school.schoolName,
                 ...statistics
             }
         }, note);
