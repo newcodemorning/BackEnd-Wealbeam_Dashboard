@@ -1182,6 +1182,202 @@ class ResponseService {
             generatedAt: new Date().toISOString()
         };
     }
+
+    /**
+     * Get exam question summary for a whole school.
+     * For each question in the daily form, returns: answered count,
+     * answer distribution, per-status counts, and averageStatus (green/yellow/red).
+     */
+    async getSchoolExamSummary(schoolId) {
+        const School = require('../models/school.model');
+        const school = await School.findById(schoolId)
+            .populate('user', 'email')
+            .populate('teachers');
+        if (!school) throw new Error('School not found');
+
+        const classes = await Class.find({ school: schoolId })
+            .populate('teacher', 'first_name last_name')
+            .select('_id ClassName Subject SelectDate teacher');
+
+        const classIds = classes.map(c => c._id);
+        const students = await Student.find({ class: { $in: classIds } })
+            .select('_id first_name last_name class');
+        const studentIds = students.map(s => s._id);
+        const totalStudents = students.length;
+
+        const form = await Form.findOne({ subject: 'daily' });
+        const questions = form ? form.questions : [];
+
+        // Latest response per student
+        const latestResponses = await Response.aggregate([
+            { $match: { student: { $in: studentIds } } },
+            { $sort: { timestamp: -1 } },
+            { $group: { _id: '$student', latestResponse: { $first: '$$ROOT' } } }
+        ]);
+
+        const responseMap = {};
+        latestResponses.forEach(r => {
+            responseMap[r._id.toString()] = r.latestResponse;
+        });
+
+        const answeredStudentIds = new Set(Object.keys(responseMap));
+        const answeredCount = answeredStudentIds.size;
+        const notAnsweredCount = totalStudents - answeredCount;
+
+        // Per-question aggregation
+        const questionStats = this._aggregateQuestionStats(questions, responseMap, studentIds);
+
+        return {
+            school: {
+                id: school._id,
+                name: school.schoolName,
+                email: school.user?.email || null,
+                address: school.address,
+                phone: school.phone,
+                language: school.language,
+                subscriptionEndDate: school.subscriptionEndDate,
+                teachersCount: school.teachers?.length || 0
+            },
+            statistics: {
+                totalStudents,
+                answeredCount,
+                notAnsweredCount
+            },
+            questions: questionStats,
+            generatedAt: new Date().toISOString()
+        };
+    }
+
+
+    /**
+     * Get exam question summary for a single class.
+     * Same shape as getSchoolExamSummary but scoped to one class.
+     */
+    async getClassExamSummary(classId) {
+        const School = require('../models/school.model');
+        const classData = await Class.findById(classId)
+            .populate('teacher', 'first_name last_name')
+            .populate('school');
+        if (!classData) throw new Error('Class not found');
+
+        const school = await School.findById(classData.school._id)
+            .populate('user', 'email')
+            .populate('teachers');
+        if (!school) throw new Error('School not found');
+
+        const { Form: FormModel } = require('../models/question.model');
+        const form = await FormModel.findOne({ subject: 'daily' });
+        const questions = form ? form.questions : [];
+
+        const students = await Student.find({ class: classId })
+            .select('_id first_name last_name class');
+        const studentIds = students.map(s => s._id);
+        const totalStudents = students.length;
+
+        // Latest response per student
+        const latestResponses = await Response.aggregate([
+            { $match: { student: { $in: studentIds } } },
+            { $sort: { timestamp: -1 } },
+            { $group: { _id: '$student', latestResponse: { $first: '$$ROOT' } } }
+        ]);
+
+        const responseMap = {};
+        latestResponses.forEach(r => {
+            responseMap[r._id.toString()] = r.latestResponse;
+        });
+
+        const answeredCount = Object.keys(responseMap).length;
+        const notAnsweredCount = totalStudents - answeredCount;
+
+        const questionStats = this._aggregateQuestionStats(questions, responseMap, studentIds);
+
+        return {
+            school: {
+                id: school._id,
+                name: school.schoolName,
+                email: school.user?.email || null,
+                address: school.address,
+                phone: school.phone,
+                language: school.language,
+                subscriptionEndDate: school.subscriptionEndDate,
+                teachersCount: school.teachers?.length || 0
+            },
+            class: {
+                id: classData._id,
+                className: classData.ClassName,
+                subject: classData.Subject,
+                selectDate: classData.SelectDate,
+                teacher: classData.teacher ? {
+                    id: classData.teacher._id,
+                    name: `${classData.teacher.first_name} ${classData.teacher.last_name}`
+                } : null
+            },
+            statistics: {
+                totalStudents,
+                answeredCount,
+                notAnsweredCount
+            },
+            questions: questionStats,
+            generatedAt: new Date().toISOString()
+        };
+    }
+
+
+    /**
+     * Internal helper: aggregates per-question stats from the latest responseMap.
+     * @param {Array} questions - Form question definitions
+     * @param {Object} responseMap - { studentId: latestResponseDoc }
+     * @param {Array} studentIds  - all student IDs (for not-answered count)
+     */
+    _aggregateQuestionStats(questions, responseMap, studentIds) {
+        const totalStudents = studentIds.length;
+
+        return questions.map(q => {
+            const qIdStr = q._id.toString();
+            let answeredCount = 0;
+            const distribution = {};
+            const statusCounts = { green: 0, yellow: 0, red: 0 };
+
+            Object.values(responseMap).forEach(resp => {
+                if (!resp) return;
+                const answers = resp.answers || [];
+                const match = answers.find(a => a.question?.id?.toString() === qIdStr);
+                if (!match) return;
+
+                answeredCount++;
+                const answerVal = match.answer != null ? String(match.answer) : 'N/A';
+                distribution[answerVal] = (distribution[answerVal] || 0) + 1;
+
+                const s = match.status || 'green';
+                if (s === 'green') statusCounts.green++;
+                else if (s === 'yellow') statusCounts.yellow++;
+                else if (s === 'red') statusCounts.red++;
+            });
+
+            // Dominant status: red > yellow > green
+            let averageStatus = 'green';
+            if (statusCounts.red > 0 && statusCounts.red >= statusCounts.green && statusCounts.red >= statusCounts.yellow) {
+                averageStatus = 'red';
+            } else if (statusCounts.yellow > 0 && statusCounts.yellow >= statusCounts.green) {
+                averageStatus = 'yellow';
+            }
+
+            const questionText = typeof q.text === 'object'
+                ? (q.text.en || q.text.ar || JSON.stringify(q.text))
+                : (q.text || 'Unknown');
+
+            return {
+                id: q._id,
+                text: questionText,
+                type: q.type,
+                answeredCount,
+                notAnsweredCount: totalStudents - answeredCount,
+                distribution,
+                statusCounts,
+                averageStatus
+            };
+        });
+    }
 }
 
 module.exports = new ResponseService();

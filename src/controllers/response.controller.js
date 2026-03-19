@@ -1,6 +1,6 @@
 const responseService = require('../services/response.service');
 const Response = require('../models/response.model');
-const { generateAnalyticsReport, generateStudentsStatusReport, generateClassStudentsStatusReport, generateStudentCompareTwoDaysReport } = require('../services/report.service');
+const { generateAnalyticsReport, generateStudentsStatusReport, generateClassStudentsStatusReport, generateStudentCompareTwoDaysReport, generateSchoolExamSummaryReport, generateClassExamSummaryReport } = require('../services/report.service');
 const School = require('../models/school.model');
 
 exports.submitFormResponse = async (req, res) => {
@@ -374,6 +374,104 @@ exports.getClassStudentsStatus = async (req, res) => {
         res.json({
             success: true,
             data: result
+        });
+    } catch (error) {
+        res.status(error.message === 'Class not found' ? 404 : 500).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+
+
+/**
+ * Get school exam summary as JSON
+ * Returns per-question stats (answered count, distribution, averageStatus) for the whole school
+ */
+exports.getSchoolExamSummary = async (req, res) => {
+    try {
+        const schoolId = req.params.id;
+        const result = await responseService.getSchoolExamSummary(schoolId);
+        res.json({ success: true, data: result });
+    } catch (error) {
+        res.status(error.message === 'School not found' ? 404 : 500).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+
+
+/**
+ * Generate school exam summary as PDF
+ */
+exports.getSchoolExamSummaryPDF = async (req, res) => {
+    try {
+        const schoolId = req.params.id;
+        const note = req.body?.note || null;
+
+        const summaryData = await responseService.getSchoolExamSummary(schoolId);
+
+        const result = await generateSchoolExamSummaryReport({ success: true, data: summaryData }, note);
+
+        res.json({
+            success: true,
+            message: 'School exam summary report generated successfully',
+            data: {
+                fileName: result.fileName,
+                fileType: result.fileType,
+                downloadUrl: result.downloadUrl,
+                generatedAt: new Date().toISOString()
+            },
+            summaryData
+        });
+    } catch (error) {
+        res.status(error.message === 'School not found' ? 404 : 500).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+
+
+/**
+ * Get class exam summary as JSON
+ * Returns per-question stats for a single class
+ */
+exports.getClassExamSummary = async (req, res) => {
+    try {
+        const classId = req.params.id;
+        const result = await responseService.getClassExamSummary(classId);
+        res.json({ success: true, data: result });
+    } catch (error) {
+        res.status(error.message === 'Class not found' ? 404 : 500).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+
+
+/**
+ * Generate class exam summary as PDF
+ */
+exports.getClassExamSummaryPDF = async (req, res) => {
+    try {
+        const classId = req.params.id;
+        const note = req.body?.note || null;
+
+        const summaryData = await responseService.getClassExamSummary(classId);
+        const result = await generateClassExamSummaryReport({ success: true, data: summaryData }, note);
+
+        res.json({
+            success: true,
+            message: 'Class exam summary report generated successfully',
+            data: {
+                fileName: result.fileName,
+                fileType: result.fileType,
+                downloadUrl: result.downloadUrl,
+                generatedAt: new Date().toISOString()
+            }
         });
     } catch (error) {
         res.status(error.message === 'Class not found' ? 404 : 500).json({

@@ -7,6 +7,8 @@ import { generateWellnessReportHTML as generateDailyReportHTML } from './htmlTem
 import { generateWellnessReportHTML, generateStudentsStatusReportHTML } from './htmlTemplate.js';
 import { generateClassStudentsStatusReportHTML } from './htmlTemplateClass.js';
 import { generateStudentCompareTwoDaysHTML } from './htmlTemplateStudentCompare.js';
+import { generateSchoolExamSummaryHTML } from './htmlTemplateExamSummarySchool.js';
+import { generateClassExamSummaryHTML } from './htmlTemplateExamSummaryClass.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -433,6 +435,146 @@ export async function generateStudentCompareTwoDaysReport(apiData = null) {
 
     } catch (error) {
         console.error('❌ Error generating student compare report:', error);
+        throw error;
+    }
+}
+
+
+/**
+ * Generate a school exam summary report as PDF
+ * @param {Object} apiData - { success: true, data: { school, statistics, questions } }
+ * @param {string|null} note
+ */
+export async function generateSchoolExamSummaryReport(apiData = null, note = null) {
+    try {
+        const summaryData = apiData?.data;
+        if (!summaryData) throw new Error('No summary data provided for school exam summary report');
+
+        const reportId = `SCHOOL_EXAM_SUMMARY_${Date.now()}`;
+        const qrCodeDataURL = await QRCode.toDataURL(reportId, {
+            width: 200, margin: 1, color: { dark: '#1ba927', light: '#FFFFFF' }
+        });
+
+        const htmlContent = generateSchoolExamSummaryHTML(summaryData, qrCodeDataURL, note);
+
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T');
+        const dateStr = timestamp[0];
+        const timeStr = timestamp[1].split('.')[0];
+
+        let finalFilePath, finalFileName, isPDF = false;
+
+        try {
+            console.log('🔍 Attempting to load Puppeteer for School Exam Summary Report...');
+            const puppeteer = await import('puppeteer');
+            const pdfFileName = `school_exam_summary_report_${dateStr}_${timeStr}.pdf`;
+            const pdfFilePath = path.join(reportsDir, pdfFileName);
+
+            const browser = await puppeteer.launch({
+                headless: 'new',
+                args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
+            });
+            const page = await browser.newPage();
+            await page.setContent(htmlContent, { waitUntil: 'networkidle0', timeout: 30000 });
+            await page.pdf({
+                path: pdfFilePath, format: 'A4', printBackground: true,
+                preferCSSPageSize: false,
+                margin: { top: '6mm', right: '6mm', bottom: '6mm', left: '6mm' }
+            });
+            await browser.close();
+
+            finalFilePath = pdfFilePath;
+            finalFileName = pdfFileName;
+            isPDF = true;
+            console.log(`✅ School Exam Summary PDF generated: ${pdfFileName}`);
+        } catch (pdfError) {
+            console.error('❌ PDF generation failed:', pdfError.message);
+            const htmlFileName = `school_exam_summary_report_${dateStr}_${timeStr}.html`;
+            const htmlFilePath = path.join(reportsDir, htmlFileName);
+            fs.writeFileSync(htmlFilePath, htmlContent, 'utf8');
+            finalFilePath = htmlFilePath;
+            finalFileName = htmlFileName;
+        }
+
+        return {
+            filePath: finalFilePath,
+            fileName: finalFileName,
+            relativePath: path.relative(process.cwd(), finalFilePath),
+            isPDF,
+            fileType: isPDF ? 'PDF' : 'HTML',
+            downloadUrl: `${process.env.ENVIRONMENT === 'production' ? process.env.PROD_BASE_URL : process.env.DEV_BASE_URL}/reports/${finalFileName}`
+        };
+    } catch (error) {
+        console.error('❌ Error generating school exam summary report:', error);
+        throw error;
+    }
+}
+
+
+/**
+ * Generate a class exam summary report as PDF
+ * @param {Object} apiData - { success: true, data: { school, class, statistics, questions } }
+ * @param {string|null} note
+ */
+export async function generateClassExamSummaryReport(apiData = null, note = null) {
+    try {
+        const summaryData = apiData?.data;
+        if (!summaryData) throw new Error('No summary data provided for class exam summary report');
+
+        const reportId = `CLASS_EXAM_SUMMARY_${Date.now()}`;
+        const qrCodeDataURL = await QRCode.toDataURL(reportId, {
+            width: 200, margin: 1, color: { dark: '#1ba927', light: '#FFFFFF' }
+        });
+
+        const htmlContent = generateClassExamSummaryHTML(summaryData, qrCodeDataURL, note);
+
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T');
+        const dateStr = timestamp[0];
+        const timeStr = timestamp[1].split('.')[0];
+
+        let finalFilePath, finalFileName, isPDF = false;
+
+        try {
+            console.log('🔍 Attempting to load Puppeteer for Class Exam Summary Report...');
+            const puppeteer = await import('puppeteer');
+            const pdfFileName = `class_exam_summary_report_${dateStr}_${timeStr}.pdf`;
+            const pdfFilePath = path.join(reportsDir, pdfFileName);
+
+            const browser = await puppeteer.launch({
+                headless: 'new',
+                args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
+            });
+            const page = await browser.newPage();
+            await page.setContent(htmlContent, { waitUntil: 'networkidle0', timeout: 30000 });
+            await page.pdf({
+                path: pdfFilePath, format: 'A4', printBackground: true,
+                preferCSSPageSize: false,
+                margin: { top: '6mm', right: '6mm', bottom: '6mm', left: '6mm' }
+            });
+            await browser.close();
+
+            finalFilePath = pdfFilePath;
+            finalFileName = pdfFileName;
+            isPDF = true;
+            console.log(`✅ Class Exam Summary PDF generated: ${pdfFileName}`);
+        } catch (pdfError) {
+            console.error('❌ PDF generation failed:', pdfError.message);
+            const htmlFileName = `class_exam_summary_report_${dateStr}_${timeStr}.html`;
+            const htmlFilePath = path.join(reportsDir, htmlFileName);
+            fs.writeFileSync(htmlFilePath, htmlContent, 'utf8');
+            finalFilePath = htmlFilePath;
+            finalFileName = htmlFileName;
+        }
+
+        return {
+            filePath: finalFilePath,
+            fileName: finalFileName,
+            relativePath: path.relative(process.cwd(), finalFilePath),
+            isPDF,
+            fileType: isPDF ? 'PDF' : 'HTML',
+            downloadUrl: `${process.env.ENVIRONMENT === 'production' ? process.env.PROD_BASE_URL : process.env.DEV_BASE_URL}/reports/${finalFileName}`
+        };
+    } catch (error) {
+        console.error('❌ Error generating class exam summary report:', error);
         throw error;
     }
 }

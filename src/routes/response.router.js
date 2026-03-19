@@ -59,4 +59,18 @@ router.post('/school-students-status/pdf/:id', authorizeRole(['super-admin', 'sc
 // Get all students status for a class as PDF report (POST to allow optional note in body)
 router.post('/class-students-status/pdf/:id', authorizeRole(['super-admin', 'school', 'teacher']), responseController.getClassStudentsStatusPDF);
 
+
+// Get exam summary for a school (JSON) — per-question stats with average status
+router.get('/school-exam-summary/:id', authorizeRole(['super-admin', 'school', 'teacher']), responseController.getSchoolExamSummary);
+
+// Generate school exam summary PDF report
+router.post('/school-exam-summary/pdf/:id', authorizeRole(['super-admin', 'school', 'teacher']), responseController.getSchoolExamSummaryPDF);
+
+// Get exam summary for a class (JSON) — per-question stats with average status
+router.get('/class-exam-summary/:id', authorizeRole(['super-admin', 'school', 'teacher']), responseController.getClassExamSummary);
+
+// Generate class exam summary PDF report
+router.post('/class-exam-summary/pdf/:id', authorizeRole(['super-admin', 'school', 'teacher']), responseController.getClassExamSummaryPDF);
+
+
 module.exports = router;
