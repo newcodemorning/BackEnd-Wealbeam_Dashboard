@@ -65,7 +65,7 @@ export function generateClassExamSummaryHTML(data, qrCodeDataURL, note = null) {
                 const pct = total > 0 ? Math.round((cnt / total) * 100) : 0;
                 return `<div style="margin-bottom:4px;">
                     <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px;">
-                        <span>${val}</span><span>${cnt} (${pct}%)</span>
+                        <span>Value: <strong>${val}</strong></span><span>${cnt} answers (${pct}%)</span>
                     </div>
                     <div style="background:#e5e7eb;border-radius:4px;height:6px;overflow:hidden;">
                         <div style="width:${pct}%;background:#1ba927;height:100%;border-radius:4px;"></div>
@@ -94,7 +94,8 @@ export function generateClassExamSummaryHTML(data, qrCodeDataURL, note = null) {
             <div class="question-body">
                 <div class="answered-row">
                     <div class="answered-stats">
-                        <span class="stat-pill blue">${answered} answered</span>
+                        <span class="stat-pill blue">${q.answeredCount} total answers</span>
+                        <span class="stat-pill green-light">${q.uniqueStudentsCount} unique students</span>
                         <span class="stat-pill gray">${q.notAnsweredCount} not answered</span>
                     </div>
                     <div class="status-badge" style="background:${statusBgColor(avs)};color:${statusTextColor(avs)};">
@@ -155,6 +156,7 @@ export function generateClassExamSummaryHTML(data, qrCodeDataURL, note = null) {
             print-color-adjust: exact;
         }
         .container { max-width: 210mm; margin: 0 auto; padding: 12px; }
+        .stat-pill.green-light { background:rgba(16,185,129,0.12); color:#059669; }
 
         /* Header */
         .header {
@@ -206,7 +208,7 @@ export function generateClassExamSummaryHTML(data, qrCodeDataURL, note = null) {
         /* Summary Cards */
         .summary-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 12px;
             margin-bottom: 22px;
         }
@@ -388,7 +390,11 @@ export function generateClassExamSummaryHTML(data, qrCodeDataURL, note = null) {
         </div>
         <div class="summary-card">
             <div class="value" style="color:#059669;">${statistics.answeredCount}</div>
-            <div class="label">Students Answered</div>
+            <div class="label">Unique Students</div>
+        </div>
+        <div class="summary-card">
+            <div class="value" style="color:#2563eb;">${statistics.totalExamsTaken || 0}</div>
+            <div class="label">Total Exams</div>
         </div>
         <div class="summary-card">
             <div class="value" style="color:#dc2626;">${statistics.notAnsweredCount}</div>
