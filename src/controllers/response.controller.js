@@ -471,7 +471,8 @@ exports.getClassExamSummaryPDF = async (req, res) => {
                 fileType: result.fileType,
                 downloadUrl: result.downloadUrl,
                 generatedAt: new Date().toISOString()
-            }
+            },
+            summaryData
         });
     } catch (error) {
         res.status(error.message === 'Class not found' ? 404 : 500).json({

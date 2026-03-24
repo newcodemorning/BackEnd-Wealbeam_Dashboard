@@ -25,9 +25,9 @@ export function generateSchoolExamSummaryHTML(data, qrCodeDataURL, note = null) 
     };
 
     const statusLabel = (s) => {
-        if (s === 'green') return '✔ Good';
-        if (s === 'yellow') return '⚠ Moderate';
-        return '✘ At Risk';
+        if (s === 'green') return 'Good';
+        if (s === 'yellow') return 'Moderate';
+        return 'At Risk';
     };
 
     const statusBgColor = (s) => {

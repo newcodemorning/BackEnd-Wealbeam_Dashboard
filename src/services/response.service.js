@@ -1399,7 +1399,7 @@ class ResponseService {
                 statusCounts,
                 averageStatus
             };
-        });
+        }).filter(q => q.answeredCount > 0);
     }
 }
 
