@@ -109,9 +109,9 @@ export function generateSchoolExamSummaryHTML(data, qrCodeDataURL, note = null) 
                     </div>
                 </div>
                 <div class="status-counts-row">
-                    <span class="sc green">🟢 ${q.statusCounts.green} Good</span>
-                    <span class="sc yellow">🟡 ${q.statusCounts.yellow} Moderate</span>
-                    <span class="sc red">🔴 ${q.statusCounts.red} At Risk</span>
+                    <span class="sc green">${q.statusCounts.green} Good</span>
+                    <span class="sc yellow">${q.statusCounts.yellow} Moderate</span>
+                    <span class="sc red">${q.statusCounts.red} At Risk</span>
                 </div>
             </div>
         </div>`;
