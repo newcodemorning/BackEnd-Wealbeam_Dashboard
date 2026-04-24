@@ -1,0 +1,153 @@
+(node:333534) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///var/www/weallbeam/production-backend/source/src/services/htmlTemplateForDaily.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /var/www/weallbeam/production-backend/source/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:333534) [MONGODB DRIVER] Warning: useNewUrlParser is a deprecated option: useNewUrlParser has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+(node:333534) [MONGODB DRIVER] Warning: useUnifiedTopology is a deprecated option: useUnifiedTopology has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+(node:1794150) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///var/www/weallbeam/production-backend/source/src/services/htmlTemplateForDaily.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /var/www/weallbeam/production-backend/source/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1794150) [MONGODB DRIVER] Warning: useNewUrlParser is a deprecated option: useNewUrlParser has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+(node:1794150) [MONGODB DRIVER] Warning: useUnifiedTopology is a deprecated option: useUnifiedTopology has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+TokenExpiredError: jwt expired
+    at /var/www/weallbeam/production-backend/source/node_modules/jsonwebtoken/verify.js:190:21
+    at getSecret (/var/www/weallbeam/production-backend/source/node_modules/jsonwebtoken/verify.js:97:14)
+    at module.exports [as verify] (/var/www/weallbeam/production-backend/source/node_modules/jsonwebtoken/verify.js:101:10)
+    at authenticateUser (/var/www/weallbeam/production-backend/source/src/common/middleware/auth.js:23:25)
+    at Layer.handle [as handle_request] (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:328:13)
+    at /var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:346:12)
+    at next (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:280:10)
+    at Function.handle (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:175:3) {
+  expiredAt: 2026-03-01T23:12:10.000Z
+}
+(node:2773702) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///var/www/weallbeam/production-backend/source/src/services/htmlTemplateForDaily.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /var/www/weallbeam/production-backend/source/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2773702) [MONGODB DRIVER] Warning: useNewUrlParser is a deprecated option: useNewUrlParser has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+(node:2773702) [MONGODB DRIVER] Warning: useUnifiedTopology is a deprecated option: useUnifiedTopology has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+(node:4000433) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///var/www/weallbeam/production-backend/source/src/services/htmlTemplateForDaily.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /var/www/weallbeam/production-backend/source/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:4000433) [MONGODB DRIVER] Warning: useNewUrlParser is a deprecated option: useNewUrlParser has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+(node:4000433) [MONGODB DRIVER] Warning: useUnifiedTopology is a deprecated option: useUnifiedTopology has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+TokenExpiredError: jwt expired
+    at /var/www/weallbeam/production-backend/source/node_modules/jsonwebtoken/verify.js:190:21
+    at getSecret (/var/www/weallbeam/production-backend/source/node_modules/jsonwebtoken/verify.js:97:14)
+    at module.exports [as verify] (/var/www/weallbeam/production-backend/source/node_modules/jsonwebtoken/verify.js:101:10)
+    at authenticateUser (/var/www/weallbeam/production-backend/source/src/common/middleware/auth.js:23:25)
+    at Layer.handle [as handle_request] (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:328:13)
+    at /var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:346:12)
+    at next (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:280:10)
+    at Function.handle (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:175:3) {
+  expiredAt: 2026-03-21T11:48:38.000Z
+}
+(node:1517071) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///var/www/weallbeam/production-backend/source/src/services/htmlTemplateForDaily.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /var/www/weallbeam/production-backend/source/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1517071) [MONGODB DRIVER] Warning: useNewUrlParser is a deprecated option: useNewUrlParser has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+(node:1517071) [MONGODB DRIVER] Warning: useUnifiedTopology is a deprecated option: useUnifiedTopology has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+(node:1522555) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///var/www/weallbeam/production-backend/source/src/services/htmlTemplateForDaily.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /var/www/weallbeam/production-backend/source/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1522555) [MONGODB DRIVER] Warning: useNewUrlParser is a deprecated option: useNewUrlParser has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+(node:1522555) [MONGODB DRIVER] Warning: useUnifiedTopology is a deprecated option: useUnifiedTopology has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+(node:1523686) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///var/www/weallbeam/production-backend/source/src/services/htmlTemplateForDaily.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /var/www/weallbeam/production-backend/source/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1523686) [MONGODB DRIVER] Warning: useNewUrlParser is a deprecated option: useNewUrlParser has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+(node:1523686) [MONGODB DRIVER] Warning: useUnifiedTopology is a deprecated option: useUnifiedTopology has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+Validation Error: TypeError: Cannot read properties of undefined (reading 'validateAsync')
+    at /var/www/weallbeam/production-backend/source/src/common/middleware/validation.js:3:22
+    at Layer.handle [as handle_request] (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/layer.js:95:5)
+    at next (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/layer.js:95:5)
+    at /var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:346:12)
+    at next (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:280:10)
+    at /var/www/weallbeam/production-backend/source/src/common/middleware/auth.js:162:9
+    at checkSchoolAccess (/var/www/weallbeam/production-backend/source/src/common/middleware/auth.js:65:5)
+Validation Error: TypeError: Cannot read properties of undefined (reading 'validateAsync')
+    at /var/www/weallbeam/production-backend/source/src/common/middleware/validation.js:3:22
+    at Layer.handle [as handle_request] (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/layer.js:95:5)
+    at next (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/layer.js:95:5)
+    at /var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:346:12)
+    at next (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:280:10)
+    at /var/www/weallbeam/production-backend/source/src/common/middleware/auth.js:162:9
+    at checkSchoolAccess (/var/www/weallbeam/production-backend/source/src/common/middleware/auth.js:65:5)
+Validation Error: TypeError: Cannot read properties of undefined (reading 'validateAsync')
+    at /var/www/weallbeam/production-backend/source/src/common/middleware/validation.js:3:22
+    at Layer.handle [as handle_request] (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/layer.js:95:5)
+    at next (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/layer.js:95:5)
+    at /var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:346:12)
+    at next (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:280:10)
+    at /var/www/weallbeam/production-backend/source/src/common/middleware/auth.js:162:9
+    at checkSchoolAccess (/var/www/weallbeam/production-backend/source/src/common/middleware/auth.js:65:5)
+TokenExpiredError: jwt expired
+    at /var/www/weallbeam/production-backend/source/node_modules/jsonwebtoken/verify.js:190:21
+    at getSecret (/var/www/weallbeam/production-backend/source/node_modules/jsonwebtoken/verify.js:97:14)
+    at module.exports [as verify] (/var/www/weallbeam/production-backend/source/node_modules/jsonwebtoken/verify.js:101:10)
+    at authenticateUser (/var/www/weallbeam/production-backend/source/src/common/middleware/auth.js:23:25)
+    at Layer.handle [as handle_request] (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:328:13)
+    at /var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:346:12)
+    at next (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:280:10)
+    at Function.handle (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:175:3) {
+  expiredAt: 2026-03-26T14:06:34.000Z
+}
+Validation Error: TypeError: Cannot read properties of undefined (reading 'validateAsync')
+    at /var/www/weallbeam/production-backend/source/src/common/middleware/validation.js:3:22
+    at Layer.handle [as handle_request] (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/layer.js:95:5)
+    at next (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/layer.js:95:5)
+    at /var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:346:12)
+    at next (/var/www/weallbeam/production-backend/source/node_modules/express/lib/router/index.js:280:10)
+    at /var/www/weallbeam/production-backend/source/src/common/middleware/auth.js:162:9
+    at checkSchoolAccess (/var/www/weallbeam/production-backend/source/src/common/middleware/auth.js:41:12)
+(node:1395420) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///var/www/weallbeam/production-backend/source/src/services/htmlTemplateForDaily.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /var/www/weallbeam/production-backend/source/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1395420) [MONGODB DRIVER] Warning: useNewUrlParser is a deprecated option: useNewUrlParser has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+(node:1395420) [MONGODB DRIVER] Warning: useUnifiedTopology is a deprecated option: useUnifiedTopology has no effect since Node.js Driver version 4.0.0 and will be removed in the next major version
+MulterError: File too large
+    at abortWithCode (/var/www/weallbeam/production-backend/source/node_modules/multer/lib/make-middleware.js:73:22)
+    at FileStream.<anonymous> (/var/www/weallbeam/production-backend/source/node_modules/multer/lib/make-middleware.js:136:11)
+    at FileStream.emit (node:events:524:28)
+    at SBMH.ssCb [as _cb] (/var/www/weallbeam/production-backend/source/node_modules/busboy/lib/types/multipart.js:479:32)
+    at feed (/var/www/weallbeam/production-backend/source/node_modules/streamsearch/lib/sbmh.js:248:10)
+    at SBMH.push (/var/www/weallbeam/production-backend/source/node_modules/streamsearch/lib/sbmh.js:104:16)
+    at Multipart._write (/var/www/weallbeam/production-backend/source/node_modules/busboy/lib/types/multipart.js:567:19)
+    at writeOrBuffer (node:internal/streams/writable:572:12)
+    at _write (node:internal/streams/writable:501:10)
+    at Writable.write (node:internal/streams/writable:510:10)
+MulterError: File too large
+    at abortWithCode (/var/www/weallbeam/production-backend/source/node_modules/multer/lib/make-middleware.js:73:22)
+    at FileStream.<anonymous> (/var/www/weallbeam/production-backend/source/node_modules/multer/lib/make-middleware.js:136:11)
+    at FileStream.emit (node:events:524:28)
+    at SBMH.ssCb [as _cb] (/var/www/weallbeam/production-backend/source/node_modules/busboy/lib/types/multipart.js:479:32)
+    at feed (/var/www/weallbeam/production-backend/source/node_modules/streamsearch/lib/sbmh.js:248:10)
+    at SBMH.push (/var/www/weallbeam/production-backend/source/node_modules/streamsearch/lib/sbmh.js:104:16)
+    at Multipart._write (/var/www/weallbeam/production-backend/source/node_modules/busboy/lib/types/multipart.js:567:19)
+    at writeOrBuffer (node:internal/streams/writable:572:12)
+    at _write (node:internal/streams/writable:501:10)
+    at Writable.write (node:internal/streams/writable:510:10)
