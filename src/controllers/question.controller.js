@@ -5,11 +5,11 @@ const Response = require('../models/response.model');
 
 exports.createForm = async (req, res) => {
     try {
-        const { error } = createFormSchema.validate(req.body);
+        const { error, value } = createFormSchema.validate(req.body);
         if (error) {
             return res.status(400).json({ error: error.details[0].message });
         }
-        const form = await questionService.createForm(req.body);
+        const form = await questionService.createForm(value);
         res.status(201).json(form);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -76,12 +76,12 @@ exports.getAllForms = async (req, res) => {
 exports.updateForm = async (req, res) => {
     try {
         const { subject } = req.params;
-        const { error } = updateFormSchema.validate(req.body);
+        const { error, value } = updateFormSchema.validate(req.body);
         if (error) {
             return res.status(400).json({ error: error.details[0].message });
         }
 
-        const form = await questionService.updateForm(subject, req.body);
+        const form = await questionService.updateForm(subject, value);
         if (!form) {
             return res.status(404).json({ error: 'Form not found' });
         }
@@ -125,11 +125,11 @@ exports.getFormById = async (req, res) => {
 exports.updateFormById = async (req, res) => {
     try {
         const { id } = req.params;
-        const { error } = updateFormSchema.validate(req.body);
+        const { error, value } = updateFormSchema.validate(req.body);
         if (error) {
             return res.status(400).json({ error: error.details[0].message });
         }
-        const form = await questionService.updateFormById(id, req.body);
+        const form = await questionService.updateFormById(id, value);
         if (!form) {
             return res.status(404).json({ error: 'Form not found' });
         }

@@ -69,12 +69,15 @@ class QuestionService {
                     _id: q._id,
                     text: this._localize(q.text, lang),
                     type: q.type,
+                    score: q.score,
+                    slider: q.slider ? { min: q.slider.min, max: q.slider.max, step: q.slider.step } : undefined,
                     order: q.order,
                     dangerAnswer: q.dangerAnswer,
                     options: q.options ? q.options.map(opt => ({
                         _id: opt._id,
                         text: this._localize(opt.text, lang),
                         name: this._localize(opt.name, lang),
+                        score: opt.score,
                         isDanger: opt.isDanger
                     })) : []
                 })),
@@ -111,12 +114,15 @@ class QuestionService {
                     _id: q._id,
                     text: this._localize(q.text, lang),
                     type: q.type,
+                    score: q.score,
+                    slider: q.slider ? { min: q.slider.min, max: q.slider.max, step: q.slider.step } : undefined,
                     order: q.order,
                     dangerAnswer: q.dangerAnswer,
                     options: q.options ? q.options.map(opt => ({
                         _id: opt._id,
                         text: this._localize(opt.text, lang),
                         name: this._localize(opt.name, lang),
+                        score: opt.score,
                         isDanger: opt.isDanger
                     })) : []
                 })),

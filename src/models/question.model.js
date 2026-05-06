@@ -9,6 +9,12 @@ const optionSchema = new mongoose.Schema({
         ar: { type: String, default: "" },
         en: { type: String, default: "" }
     },
+    score: {
+        type: Number,
+        required: true,
+        min: 1,
+        max: 10
+    },
     isDanger: {
         type: Boolean,
         default: false
@@ -25,6 +31,20 @@ const questionSchema = new mongoose.Schema({
         required: true,
         enum: ['slider', 'yesno', 'dropdown', 'radiobutton']
     },
+    slider: {
+        min: { type: Number },
+        max: { type: Number },
+        step: { type: Number, default: 1 }
+    },
+    score: {
+        type: Number,
+        min: 0,
+        max: 10,
+        default: function () {
+            // For slider questions, "no score" means: use the slider answer value later.
+            return this.type === 'slider' ? null : 0;
+        }
+    },
     order: { type: Number, required: true },
     dangerAnswer: {
         type: String,
@@ -36,7 +56,7 @@ const questionSchema = new mongoose.Schema({
         type: [optionSchema],
         validate: {
             validator: function (v) {
-                if (this.type === 'dropdown' || this.type === 'radiobutton') {
+                if (this.type === 'dropdown' || this.type === 'radiobutton' || this.type === 'yesno') {
                     return v.length >= 2;
                 }
                 return true;
