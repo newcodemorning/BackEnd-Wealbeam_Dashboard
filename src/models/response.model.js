@@ -30,6 +30,11 @@ const responseSchema = new mongoose.Schema({
             type: String,
             required: true
         },
+        score: {
+            type: Number,
+            min: 1,
+            max: 10
+        },
         status: {
             type: String,
             enum: ['green', 'yellow', 'red'],
@@ -40,6 +45,11 @@ const responseSchema = new mongoose.Schema({
             enum: ['improving', 'worsening', 'stable', 'changed']
         }
     }],
+    averageMood: {
+        type: Number,
+        min: 1,
+        max: 10
+    },
     timestamp: {
         type: Date,
         default: Date.now

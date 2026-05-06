@@ -8,6 +8,73 @@ const School = require('../models/school.model');
 
 class ResponseService {
 
+    _normalizeStr(v) {
+        if (v === undefined || v === null) return '';
+        return String(v).trim().toLowerCase();
+    }
+
+    _getOptionScore(question, answer) {
+        const answerLower = this._normalizeStr(answer);
+        const options = Array.isArray(question.options) ? question.options : [];
+        const selected = options.find(opt => {
+            const candidates = [
+                opt?.text?.en,
+                opt?.text?.ar,
+                opt?.name?.en,
+                opt?.name?.ar,
+                opt?.text,   // safety in case it's already a string
+                opt?.name
+            ].map(this._normalizeStr);
+
+            return candidates.some(c => c && c === answerLower);
+        });
+
+        return selected ? selected.score : null;
+    }
+
+    _getSliderScore(question, answer) {
+        const v = Number(answer);
+        const min = Number(question?.slider?.min);
+        const max = Number(question?.slider?.max);
+
+        if (!Number.isFinite(v) || !Number.isFinite(min) || !Number.isFinite(max) || max <= min) {
+            return null;
+        }
+        if (v < min || v > max) {
+            return null;
+        }
+
+        // Lower slider value is better. Map [min..max] -> [10..1]
+        const raw = 1 + ((max - v) / (max - min)) * 9;
+        // keep 2 decimals to avoid losing signal on small ranges (e.g. 1..5)
+        return Math.round(raw * 100) / 100;
+    }
+
+    _calculateAnswerScore(question, answer) {
+        switch (question.type) {
+            case 'slider':
+                return this._getSliderScore(question, answer);
+            case 'yesno':
+            case 'dropdown':
+            case 'radiobutton':
+                return this._getOptionScore(question, answer);
+            default:
+                return null;
+        }
+    }
+
+    _calculateAverageMood(processedAnswers) {
+        const scores = (processedAnswers || [])
+            .map(a => a?.score)
+            .filter(s => typeof s === 'number' && Number.isFinite(s));
+
+        if (!scores.length) return null;
+
+        const avg = scores.reduce((sum, s) => sum + s, 0) / scores.length;
+        // Keep 2 decimals for stability/UX.
+        return Math.round(avg * 100) / 100;
+    }
+
     async processFormResponse(studentId, formId, answers) {
 
 
@@ -61,6 +128,7 @@ class ResponseService {
                         type: question.type
                     },
                     answer: answerObj.answer,
+                    score: this._calculateAnswerScore(question, answerObj.answer),
 
                     status: this.calculateStatus(question, answerObj.answer),
                     trend: question.type === 'slider' ? await this.calculateTrend(studentId, question._id, answerObj.answer) : null
@@ -91,7 +159,8 @@ class ResponseService {
         return Response.create({
             student: studentId,
             form: formId,
-            answers: processedAnswers
+            answers: processedAnswers,
+            averageMood: this._calculateAverageMood(processedAnswers)
         });
     }
 

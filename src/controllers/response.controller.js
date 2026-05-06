@@ -47,8 +47,18 @@ exports.submitFormResponse = async (req, res) => {
         res.json({
             success: true,
             data: {
+                id: response._id,
                 form: response.form,
+                timestamp: response.timestamp,
                 answered: response.answers.length,
+                averageMood: response.averageMood,
+                answers: response.answers.map(a => ({
+                    question: a.question,
+                    answer: a.answer,
+                    score: a.score,
+                    status: a.status,
+                    trend: a.trend
+                })),
                 status: response.answers.reduce((acc, curr) => {
                     acc[curr.status] = (acc[curr.status] || 0) + 1;
                     return acc;
