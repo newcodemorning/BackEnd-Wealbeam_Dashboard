@@ -91,6 +91,29 @@ exports.getStudentStatus = async (req, res) => {
     }
 };
 
+exports.getStudentResponses = async (req, res) => {
+    try {
+        const { status, fromDay, toDay, page, limit } = req.query;
+        const { data, pagination } = await responseService.getStudentResponses(req.params.studentId, {
+            status,
+            fromDay,
+            toDay,
+            page,
+            limit
+        });
+        res.json({
+            success: true,
+            data,
+            pagination
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+
 
 /**
  * Compare a student's answers between two specific days.

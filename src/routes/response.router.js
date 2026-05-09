@@ -29,6 +29,16 @@ router.post('/daily/pdf/:id', authorizeRole(['super-admin', 'school', 'teacher',
 
 
 
+// Get all responses for a student (by studentId) with averageMood, status, change (vs previous submission)
+// Optional query: status=green|yellow|red
+// Optional date: fromDay=YYYY-MM-DD — that day only; fromDay + toDay — inclusive range
+// Pagination: page (default 1), limit (default 10, max 100)
+router.get(
+    '/student-responses/:studentId',
+    authorizeRole(['super-admin', 'school', 'teacher', 'parent', 'student']),
+    responseController.getStudentResponses
+);
+
 // Get student status (school can see their students' status, teacher can see their students' status, parent can see their children's status)
 // TODO: enhance and fix errors
 router.get('/student-status/:studentId', authorizeRole(['super-admin', 'school', 'teacher', 'parent']), responseController.getStudentStatus);

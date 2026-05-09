@@ -75,6 +75,23 @@ class ResponseService {
         return Math.round(avg * 100) / 100;
     }
 
+    _getMoodStatusFromAverage(averageMood) {
+        const avg = Number(averageMood);
+        if (!Number.isFinite(avg)) return null;
+
+        if (avg >= 1 && avg <= 4) return 'red';
+        if (avg >= 5 && avg <= 6) return 'yellow';
+        if (avg >= 7 && avg <= 10) return 'green';
+        return null;
+    }
+
+    _moodChangeVsPrevious(currentAvg, previousAvg) {
+        const cur = Number(currentAvg);
+        const prev = Number(previousAvg);
+        if (!Number.isFinite(cur) || !Number.isFinite(prev)) return null;
+        return Math.round((cur - prev) * 100) / 100;
+    }
+
     async processFormResponse(studentId, formId, answers) {
 
 
@@ -254,6 +271,109 @@ class ResponseService {
         };
 
         return statusReport;
+    }
+
+    async getStudentResponses(studentId, { status: statusFilter, fromDay, toDay, page: pageRaw, limit: limitRaw } = {}) {
+        const query = { student: studentId };
+
+        const page = Math.max(1, Number.parseInt(pageRaw, 10) || 1);
+        const limitParsed = Number.parseInt(limitRaw, 10);
+        const limit = Number.isFinite(limitParsed) && limitParsed > 0
+            ? Math.min(100, limitParsed)
+            : 10;
+
+        if (statusFilter != null && String(statusFilter).trim() !== '') {
+            const normalized = String(statusFilter).trim().toLowerCase();
+            const allowed = ['red', 'yellow', 'green'];
+            if (!allowed.includes(normalized)) {
+                throw new Error('Invalid status filter. Use red, yellow, or green.');
+            }
+            if (normalized === 'red') {
+                query.averageMood = { $gte: 1, $lte: 4 };
+            } else if (normalized === 'yellow') {
+                query.averageMood = { $gte: 5, $lte: 6 };
+            } else {
+                query.averageMood = { $gte: 7, $lte: 10 };
+            }
+        }
+
+        const from = fromDay != null && String(fromDay).trim() !== '' ? String(fromDay).trim() : '';
+        const to = toDay != null && String(toDay).trim() !== '' ? String(toDay).trim() : '';
+
+        if (from || to) {
+            if (!from) {
+                throw new Error('fromDay is required when filtering by date (YYYY-MM-DD).');
+            }
+            if (!to) {
+                const start = new Date(from);
+                const end = new Date(from);
+                end.setHours(23, 59, 59, 999);
+                if (isNaN(start.getTime())) {
+                    throw new Error('Invalid fromDay. Use YYYY-MM-DD.');
+                }
+                query.timestamp = { $gte: start, $lte: end };
+            } else {
+                const start = new Date(from);
+                const end = new Date(to);
+                end.setHours(23, 59, 59, 999);
+                if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+                    throw new Error('Invalid date. Use YYYY-MM-DD for fromDay and toDay.');
+                }
+                if (start > end) {
+                    throw new Error('fromDay must be on or before toDay.');
+                }
+                query.timestamp = { $gte: start, $lte: end };
+            }
+        }
+
+        const total = await Response.countDocuments(query);
+
+        const responses = await Response.find(query)
+            .select('_id student form timestamp averageMood')
+            .populate('form', 'subject')
+            .sort({ timestamp: -1, _id: -1 })
+            .skip((page - 1) * limit)
+            .limit(limit);
+
+        const chronology = await Response.find({ student: studentId })
+            .select('_id averageMood')
+            .sort({ timestamp: -1, _id: -1 })
+            .lean();
+
+        const changeByResponseId = new Map();
+        for (let i = 0; i < chronology.length; i++) {
+            const cur = chronology[i];
+            const older = chronology[i + 1];
+            const key = cur._id.toString();
+            const change = older
+                ? this._moodChangeVsPrevious(cur.averageMood, older.averageMood)
+                : null;
+            changeByResponseId.set(key, change);
+        }
+
+        const data = responses.map(r => ({
+            id: r._id,
+            studentId: r.student,
+            form: r.form,
+            timestamp: r.timestamp,
+            averageMood: r.averageMood ?? null,
+            status: this._getMoodStatusFromAverage(r.averageMood),
+            change: changeByResponseId.get(r._id.toString()) ?? null
+        }));
+
+        const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
+
+        return {
+            data,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1 && total > 0
+            }
+        };
     }
 
 
