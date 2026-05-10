@@ -376,6 +376,100 @@ class ResponseService {
         };
     }
 
+    /**
+     * Average of `averageMood` per calendar month for one student, plus whole-year average.
+     * @param {string} yearRaw - optional YYYY (defaults to current year)
+     */
+    async getStudentMonthlyAverageMood(studentId, yearRaw) {
+        if (!mongoose.Types.ObjectId.isValid(studentId)) {
+            throw new Error('Invalid student id');
+        }
+
+        const oid = new mongoose.Types.ObjectId(studentId);
+        const yearNum = Number.parseInt(yearRaw, 10);
+        const y = Number.isFinite(yearNum) && yearNum >= 1970 && yearNum <= 2100
+            ? yearNum
+            : new Date().getFullYear();
+
+        const rangeStart = new Date(y, 0, 1);
+        const rangeEnd = new Date(y, 11, 31, 23, 59, 59, 999);
+
+        const monthNames = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+
+        const facetResult = await Response.aggregate([
+            {
+                $match: {
+                    student: oid,
+                    timestamp: { $gte: rangeStart, $lte: rangeEnd },
+                    averageMood: { $ne: null, $exists: true }
+                }
+            },
+            {
+                $facet: {
+                    byMonth: [
+                        {
+                            $group: {
+                                _id: { $month: '$timestamp' },
+                                averageMood: { $avg: '$averageMood' },
+                                responseCount: { $sum: 1 }
+                            }
+                        },
+                        { $sort: { _id: 1 } }
+                    ],
+                    yearSummary: [
+                        {
+                            $group: {
+                                _id: null,
+                                averageMood: { $avg: '$averageMood' },
+                                responseCount: { $sum: 1 }
+                            }
+                        }
+                    ]
+                }
+            }
+        ]);
+
+        const result = facetResult[0] || { byMonth: [], yearSummary: [] };
+        const byMonthArr = result.byMonth || [];
+        const monthMap = {};
+        byMonthArr.forEach((doc) => {
+            const m = doc._id;
+            monthMap[m] = {
+                averageMood: Math.round(doc.averageMood * 100) / 100,
+                responseCount: doc.responseCount
+            };
+        });
+
+        const months = [];
+        for (let m = 1; m <= 12; m++) {
+            const info = monthMap[m];
+            const avg = info ? info.averageMood : null;
+            months.push({
+                month: m,
+                name: monthNames[m - 1],
+                averageMood: avg,
+                responseCount: info ? info.responseCount : 0,
+                status: this._getMoodStatusFromAverage(avg)
+            });
+        }
+
+        const ys = result.yearSummary && result.yearSummary[0];
+        const yearAverage = ys && typeof ys.averageMood === 'number'
+            ? Math.round(ys.averageMood * 100) / 100
+            : null;
+
+        return {
+            studentId,
+            year: y,
+            months,
+            yearAverage,
+            yearResponseCount: ys?.responseCount ?? 0
+        };
+    }
+
 
     /**
      * Compare a student's answers between two specific days.

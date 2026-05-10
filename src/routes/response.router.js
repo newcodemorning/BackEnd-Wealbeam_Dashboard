@@ -39,6 +39,13 @@ router.get(
     responseController.getStudentResponses
 );
 
+// Monthly + yearly average mood for one student (query: year=YYYY, optional — defaults to current year)
+router.get(
+    '/student-monthly-average-mood/:studentId',
+    authorizeRole(['super-admin', 'school', 'teacher', 'parent', 'student']),
+    responseController.getStudentMonthlyAverageMood
+);
+
 // Get student status (school can see their students' status, teacher can see their students' status, parent can see their children's status)
 // TODO: enhance and fix errors
 router.get('/student-status/:studentId', authorizeRole(['super-admin', 'school', 'teacher', 'parent']), responseController.getStudentStatus);
