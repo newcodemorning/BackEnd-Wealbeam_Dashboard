@@ -371,7 +371,6 @@ export function generateClassExamSummaryHTML(data, qrCodeDataURL, note = null) {
             <div class="class-name">${classInfo.className || 'Unknown Class'}</div>
             <div class="class-meta">
                 Subject: ${classInfo.subject || 'N/A'}
-                &nbsp;|&nbsp; Date: ${formatDate(classInfo.selectDate)}
             </div>
         </div>
         <div class="teacher-box">
