@@ -14,7 +14,9 @@ router.post('/submit', authorizeRole(['student']), validate(responseSchema), res
 
 
 
-// Get all responses for school (school can see their responses) by date range
+// School response statistics (per-class forms: Class.Subject === Form.subject). Default: today.
+// Query: period=today|weekly|monthly|3months|6months|yearly
+// Custom range: fromDay=YYYY-MM-DD&toDay=YYYY-MM-DD (overrides period)
 router.get('/:id', authorizeRole(['super-admin', 'school', 'teacher', 'parent']), responseController.getSchoolResponsesStatistics);
 
 

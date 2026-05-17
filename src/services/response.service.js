@@ -103,10 +103,7 @@ class ResponseService {
         const form = await Form.findById(formId);
         if (!form) throw new Error('Form not found');
 
-
-
         // Validate that the form subject matches the student's class subject
-
         // TODO: re-enable this check if forms are strictly tied to class subjects
         // if (form.subject !== student.class.Subject) {
         //     throw new Error('Form subject does not match student\'s class subject');
@@ -717,7 +714,6 @@ class ResponseService {
 
 
     async getDailySchoolResponsesStatistics(schoolId, formDay, toDay) {
-        // 1️⃣ جلب كل الصفوف والطلاب
         const classes = await Class.find({ school: schoolId }).select('_id ClassName');
         const classIds = classes.map(c => c._id);
 
@@ -736,13 +732,11 @@ class ResponseService {
 
             const questionIds = form.questions.map(q => q._id);
 
-            const responses = await Response.find({
+            return Response.find({
                 student: { $in: studentIds },
                 'answers.question.id': { $in: questionIds },
                 timestamp: { $gte: rangeStart, $lte: rangeEnd }
             }).populate('student', 'name class');
-
-            return responses;
         }
 
         const responses = await fetchResponses(start, end);
@@ -752,7 +746,6 @@ class ResponseService {
         const expectedResponses = students.length * Math.ceil((end - start) / (1000 * 60 * 60 * 24));
         const attendanceRate = parseFloat(((actualResponses / expectedResponses) * 100).toFixed(2));
 
-        // Get the form to access question details
         const form = await Form.findOne({ subject: 'daily' });
         const questionTextMap = {};
         if (form) {
@@ -950,54 +943,272 @@ class ResponseService {
 
 
 
-    async getSchoolResponsesStatistics(schoolId, formDay, toDay) {
-        // Step 1: Find all classes and students related to this school
-        const classes = await Class.find({ school: schoolId }).select('_id');
-        const classIds = classes.map(c => c._id);
+    _formatDateYMD(date) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
 
-        const students = await Student.find({ class: { $in: classIds } }).select('_id');
-        const studentIds = students.map(s => s._id);
+    _parseYMD(ymd) {
+        const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd).trim());
+        if (!match) {
+            throw new Error(`Invalid date "${ymd}". Use YYYY-MM-DD.`);
+        }
+        const y = Number(match[1]);
+        const m = Number(match[2]);
+        const d = Number(match[3]);
+        const date = new Date(y, m - 1, d);
+        if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) {
+            throw new Error(`Invalid date "${ymd}". Use YYYY-MM-DD.`);
+        }
+        return { y, m, d };
+    }
+
+    _localDayStart(ymd) {
+        const { y, m, d } = this._parseYMD(ymd);
+        return new Date(y, m - 1, d, 0, 0, 0, 0);
+    }
+
+    _localDayEnd(ymd) {
+        const { y, m, d } = this._parseYMD(ymd);
+        return new Date(y, m - 1, d, 23, 59, 59, 999);
+    }
+
+    /**
+     * All student IDs for a school — from Student.class and Class.students (both are used in the app).
+     */
+    async _getSchoolStudentIds(schoolId) {
+        const classes = await Class.find({ school: schoolId }).select('_id students').lean();
+        const classIds = classes.map(c => c._id);
+        const idSet = new Set();
+
+        if (classIds.length) {
+            const byClassField = await Student.find({ class: { $in: classIds } })
+                .select('_id')
+                .lean();
+            byClassField.forEach(s => idSet.add(String(s._id)));
+        }
+
+        for (const cls of classes) {
+            for (const sid of cls.students || []) {
+                if (sid) idSet.add(String(sid));
+            }
+        }
+
+        return [...idSet].map(id => new mongoose.Types.ObjectId(id));
+    }
+
+    /**
+     * Per-class forms for a school: Class.Subject === Form.subject.
+     */
+    async _getSchoolClassFormContext(schoolId) {
+        const classes = await Class.find({ school: schoolId })
+            .select('_id ClassName Subject')
+            .lean();
+
+        const subjects = [
+            ...new Set(
+                classes
+                    .map(c => c.Subject)
+                    .filter(s => s != null && String(s).trim() !== '')
+            )
+        ];
+
+        const forms = subjects.length
+            ? await Form.find({ subject: { $in: subjects } }).select('_id subject').lean()
+            : [];
+
+        const formBySubject = new Map(forms.map(f => [f.subject, f]));
+
+        const classForms = classes.map(c => ({
+            classId: String(c._id),
+            className: c.ClassName,
+            subject: c.Subject || null,
+            formId: c.Subject && formBySubject.has(c.Subject)
+                ? String(formBySubject.get(c.Subject)._id)
+                : null
+        }));
+
+        return { classForms, subjects, forms };
+    }
+
+    _buildSchoolClassFormResponsesPipeline(schoolId, studentIds, rangeStart, rangeEnd) {
+        const schoolObjectId = new mongoose.Types.ObjectId(schoolId);
+
+        return [
+            {
+                $match: {
+                    student: { $in: studentIds },
+                    timestamp: { $gte: rangeStart, $lte: rangeEnd }
+                }
+            },
+            {
+                $lookup: {
+                    from: 'students',
+                    localField: 'student',
+                    foreignField: '_id',
+                    as: 'studentDoc'
+                }
+            },
+            { $unwind: '$studentDoc' },
+            {
+                $lookup: {
+                    from: 'classes',
+                    localField: 'studentDoc.class',
+                    foreignField: '_id',
+                    as: 'classDoc'
+                }
+            },
+            { $unwind: '$classDoc' },
+            {
+                $match: {
+                    'classDoc.school': schoolObjectId,
+                    'classDoc.Subject': { $exists: true, $nin: [null, ''] }
+                }
+            },
+            {
+                $lookup: {
+                    from: 'forms',
+                    localField: 'form',
+                    foreignField: '_id',
+                    as: 'formDoc'
+                }
+            },
+            { $unwind: '$formDoc' },
+            {
+                $match: {
+                    $expr: { $eq: ['$formDoc.subject', '$classDoc.Subject'] }
+                }
+            },
+            {
+                $project: {
+                    studentDoc: 0,
+                    classDoc: 0,
+                    formDoc: 0
+                }
+            }
+        ];
+    }
+
+    async _fetchSchoolClassFormResponses(schoolId, studentIds, rangeStart, rangeEnd) {
+        if (!studentIds.length) {
+            return [];
+        }
+
+        return Response.aggregate(
+            this._buildSchoolClassFormResponsesPipeline(schoolId, studentIds, rangeStart, rangeEnd)
+        );
+    }
+
+    _resolveSchoolStatisticsDateRange({ period, fromDay, toDay } = {}) {
+        const VALID_PERIODS = ['today', 'weekly', 'monthly', '3months', '6months', 'yearly', 'custom'];
+        const PERIOD_ALIASES = {
+            quarter: '3months',
+            quarterly: '3months',
+            semiannual: '6months',
+            halfyear: '6months'
+        };
+
+        const from = fromDay != null && String(fromDay).trim() !== '' ? String(fromDay).trim() : '';
+        const to = toDay != null && String(toDay).trim() !== '' ? String(toDay).trim() : '';
+
+        if (from || to) {
+            if (!from || !to) {
+                throw new Error('Custom date range requires both fromDay and toDay (YYYY-MM-DD).');
+            }
+            this._parseYMD(from);
+            this._parseYMD(to);
+            if (from > to) {
+                throw new Error('fromDay must be on or before toDay.');
+            }
+            return { period: 'custom', fromDay: from, toDay: to };
+        }
+
+        let resolved = period != null && String(period).trim() !== ''
+            ? String(period).trim().toLowerCase()
+            : 'today';
+        resolved = PERIOD_ALIASES[resolved] || resolved;
+
+        if (!VALID_PERIODS.includes(resolved)) {
+            throw new Error(
+                `Invalid period "${period}". Use: ${VALID_PERIODS.filter(p => p !== 'custom').join(', ')}, or provide fromDay and toDay.`
+            );
+        }
+
+        if (resolved === 'custom') {
+            throw new Error('Custom period requires fromDay and toDay (YYYY-MM-DD).');
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayStr = this._formatDateYMD(today);
+
+        switch (resolved) {
+            case 'weekly': {
+                const start = new Date(today);
+                start.setDate(start.getDate() - 6);
+                return { period: 'weekly', fromDay: this._formatDateYMD(start), toDay: todayStr };
+            }
+            case 'monthly': {
+                const start = new Date(today.getFullYear(), today.getMonth(), 1);
+                return { period: 'monthly', fromDay: this._formatDateYMD(start), toDay: todayStr };
+            }
+            case '3months': {
+                const start = new Date(today);
+                start.setMonth(start.getMonth() - 3);
+                return { period: '3months', fromDay: this._formatDateYMD(start), toDay: todayStr };
+            }
+            case '6months': {
+                const start = new Date(today);
+                start.setMonth(start.getMonth() - 6);
+                return { period: '6months', fromDay: this._formatDateYMD(start), toDay: todayStr };
+            }
+            case 'yearly': {
+                const start = new Date(today.getFullYear(), 0, 1);
+                return { period: 'yearly', fromDay: this._formatDateYMD(start), toDay: todayStr };
+            }
+            case 'today':
+            default:
+                return { period: 'today', fromDay: todayStr, toDay: todayStr };
+        }
+    }
+
+    async getSchoolResponsesStatistics(schoolId, options = {}) {
+        const { period: resolvedPeriod, fromDay: formDay, toDay } =
+            this._resolveSchoolStatisticsDateRange(options);
+
+        if (!mongoose.Types.ObjectId.isValid(schoolId)) {
+            throw new Error('Invalid school ID');
+        }
+
+        const school = await School.findById(schoolId).select('_id');
+        if (!school) {
+            throw new Error('School not found');
+        }
+
+        const [studentIds, { classForms }] = await Promise.all([
+            this._getSchoolStudentIds(schoolId),
+            this._getSchoolClassFormContext(schoolId)
+        ]);
 
         if (formDay > toDay) {
             throw new Error('Invalid date range: "from" date must be earlier than "to" date');
         }
 
-        // Step 2: Handle date range
-        const start = new Date(formDay);
-        const end = new Date(toDay);
-        end.setHours(23, 59, 59, 999); // include entire end day
+        // Step 2: Local calendar day boundaries (avoids UTC "today" drift)
+        const start = this._localDayStart(formDay);
+        const end = this._localDayEnd(toDay);
 
         // Previous period (same range length before the start date)
-        const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+        const diffDays = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1);
+        const prevEnd = new Date(start);
+        prevEnd.setMilliseconds(prevEnd.getMilliseconds() - 1);
         const prevStart = new Date(start);
         prevStart.setDate(prevStart.getDate() - diffDays);
-        const prevEnd = new Date(start);
 
-        async function fetchResponses(rangeStart, rangeEnd) {
-            // 1️⃣ Get the form that has subject = 'daily'
-            const form = await Form.findOne({ subject: 'daily' });
-
-            if (!form) {
-                console.log('Form with subject "daily" not found');
-                return [];
-            }
-
-            // 2️⃣ Extract all question IDs from that form
-            const allQuestionIDs = form.questions.map(q => q._id);
-
-            // 3️⃣ Fetch all responses in the date range that include these questions
-            const responses = await Response.find({
-                student: { $in: studentIds },
-                'answers.question.id': { $in: allQuestionIDs },
-                timestamp: { $gte: rangeStart, $lte: rangeEnd }
-            })
-                .populate('student', 'name')
-                .populate('form', 'subject');
-
-            console.log('responses:', responses);
-
-            return responses;
-        }
+        const fetchResponses = (rangeStart, rangeEnd) =>
+            this._fetchSchoolClassFormResponses(schoolId, studentIds, rangeStart, rangeEnd);
 
 
 
@@ -1078,15 +1289,23 @@ class ResponseService {
             return mostCommon;
         }
 
+        const currentStats = buildStatistics(currentResponses);
+
         // Step 6: Return final statistics
         return {
-            currentRange: buildStatistics(currentResponses),
+            schoolId: String(schoolId),
+            period: resolvedPeriod,
+            studentsCount: studentIds.length,
+            classForms,
+            totalResponses: currentStats.totalResponses,
+            currentRange: currentStats,
             previousRange: buildStatistics(previousResponses),
             dateRange: {
+                period: resolvedPeriod,
                 from: formDay,
                 to: toDay,
-                previousFrom: prevStart.toISOString().split('T')[0],
-                previousTo: prevEnd.toISOString().split('T')[0]
+                previousFrom: this._formatDateYMD(prevStart),
+                previousTo: this._formatDateYMD(prevEnd)
             }
         };
     }
