@@ -221,14 +221,12 @@ exports.getStudentStatusCompareTwoDaysPDF = async (req, res) => {
 exports.getSchoolResponsesStatistics = async (req, res) => {
     try {
         const schoolId = req.params.id;
-        const today = new Date();
-
-        const yesterday = new Date(today);
-        yesterday.setDate(today.getDate() - 7);
-
-        const formDay = req.query.fromDay || yesterday.toISOString().split('T')[0];
-        const toDay = req.query.toDay || today.toISOString().split('T')[0];
-        const statistics = await responseService.getSchoolResponsesStatistics(schoolId, formDay, toDay);
+        const { period, fromDay, toDay } = req.query;
+        const statistics = await responseService.getSchoolResponsesStatistics(schoolId, {
+            period,
+            fromDay,
+            toDay
+        });
 
         res.json({
             success: true,
