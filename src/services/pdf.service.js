@@ -4,6 +4,86 @@ const { deleteFile } = require('../middleware/uploadMiddleware');
 
 class PDFService {
 
+  static _normalizeStoragePath(filePath) {
+    if (!filePath) return '';
+
+    let normalized = String(filePath).trim().replace(/\\/g, '/');
+
+    const bases = [
+      process.env.PROD_BASE_URL,
+      process.env.DEV_BASE_URL,
+      'https://api.weallbeamtogether.co.uk'
+    ].filter(Boolean);
+
+    for (const base of bases) {
+      const normalizedBase = base.replace(/\/+$/, '');
+      if (normalized.startsWith(normalizedBase)) {
+        normalized = normalized.slice(normalizedBase.length);
+        break;
+      }
+    }
+
+    return normalized.replace(/^\/+/, '');
+  }
+
+  static _buildFilePathQuery(filePath) {
+    const normalized = this._normalizeStoragePath(filePath);
+    const variants = new Set([filePath, normalized].filter(Boolean));
+
+    const bases = [
+      process.env.PROD_BASE_URL,
+      process.env.DEV_BASE_URL,
+      'https://api.weallbeamtogether.co.uk'
+    ].filter(Boolean);
+
+    for (const base of bases) {
+      const normalizedBase = base.replace(/\/+$/, '');
+      if (normalized) {
+        variants.add(`${normalizedBase}/${normalized}`);
+      }
+    }
+
+    return { filePath: { $in: [...variants] } };
+  }
+
+  static _deduplicatePDFRecords(pdfs) {
+    const seen = new Set();
+
+    return pdfs.filter((pdf) => {
+      const key = this._normalizeStoragePath(pdf.filePath) || String(pdf._id);
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+  }
+
+  static async _findByNormalizedFilePath(normalizedPath, excludeId = null) {
+    if (!normalizedPath) return null;
+
+    const query = this._buildFilePathQuery(normalizedPath);
+    if (excludeId) {
+      query._id = { $ne: excludeId };
+    }
+
+    const candidates = await PDF.find(query).select('filePath _id').lean();
+    return candidates.find(
+      (pdf) => this._normalizeStoragePath(pdf.filePath) === normalizedPath
+    ) || null;
+  }
+
+  static async _countReferencesToFile(normalizedPath, excludeId = null) {
+    if (!normalizedPath) return 0;
+
+    const query = excludeId ? { _id: { $ne: excludeId } } : {};
+    const candidates = await PDF.find(query).select('filePath').lean();
+
+    return candidates.filter(
+      (pdf) => this._normalizeStoragePath(pdf.filePath) === normalizedPath
+    ).length;
+  }
+
   // Temporary migration function - run once to update old data
   static async migrateOldPDFsToMultilingual() {
     try {
@@ -169,16 +249,59 @@ class PDFService {
     return first || '';
   }
 
+  static async removeDuplicatePDFRecords() {
+    try {
+      const allPDFs = await PDF.find().sort({ uploadedAt: -1, _id: -1 }).lean();
+      const seenPaths = new Set();
+      const duplicateIds = [];
+
+      for (const pdf of allPDFs) {
+        const normalizedPath = this._normalizeStoragePath(pdf.filePath);
+        const dedupeKey = normalizedPath || String(pdf._id);
+
+        if (seenPaths.has(dedupeKey)) {
+          duplicateIds.push(pdf._id);
+          continue;
+        }
+
+        seenPaths.add(dedupeKey);
+      }
+
+      if (duplicateIds.length > 0) {
+        await PDF.deleteMany({ _id: { $in: duplicateIds } });
+      }
+
+      return {
+        success: true,
+        removed: duplicateIds.length,
+        kept: seenPaths.size,
+        message: `Removed ${duplicateIds.length} duplicate PDF record(s), kept ${seenPaths.size} unique file(s)`
+      };
+    } catch (error) {
+      throw new Error(`Duplicate cleanup failed: ${error.message}`);
+    }
+  }
+
   static async createPDF(data, pdfPath, coverImagePath = null) {
     try {
       if (!pdfPath) {
         throw new Error('PDF file path is required');
       }
 
+      const normalizedPdfPath = this._normalizeStoragePath(pdfPath);
+      const normalizedCoverPath = coverImagePath
+        ? this._normalizeStoragePath(coverImagePath)
+        : null;
+
+      const existingPdf = await this._findByNormalizedFilePath(normalizedPdfPath);
+      if (existingPdf) {
+        throw new Error('This PDF file is already registered');
+      }
+
       console.log('Creating PDF record with:', {
         title: data.title,
-        pdfPath,
-        coverImagePath,
+        pdfPath: normalizedPdfPath,
+        coverImagePath: normalizedCoverPath,
         supportedLanguages: data.supportedLanguages,
         targetSchools: data.targetSchools,
         isPublic: data.isPublic
@@ -187,8 +310,8 @@ class PDFService {
       // Create PDF record in database
       const pdf = new PDF({
         ...data,
-        filePath: pdfPath,
-        coverImage: coverImagePath,
+        filePath: normalizedPdfPath,
+        coverImage: normalizedCoverPath,
         fileName: data.fileName
       });
 
@@ -293,7 +416,7 @@ class PDFService {
         ? process.env.PROD_BASE_URL
         : process.env.DEV_BASE_URL;
 
-      return pdfs.map(pdf => ({
+      return this._deduplicatePDFRecords(pdfs).map(pdf => ({
         ...pdf,
         title: this._localize(pdf.title, lang),
         description: this._localize(pdf.description, lang),
@@ -358,7 +481,15 @@ class PDFService {
         }
       }
 
-      return await PDF.countDocuments(query);
+      const pdfs = await PDF.find(query).select('filePath').lean();
+      const seenPaths = new Set();
+
+      for (const pdf of pdfs) {
+        const dedupeKey = this._normalizeStoragePath(pdf.filePath) || String(pdf._id);
+        seenPaths.add(dedupeKey);
+      }
+
+      return seenPaths.size;
     } catch (error) {
       throw new Error(`Failed to count PDFs: ${error.message}`);
     }
@@ -403,7 +534,7 @@ class PDFService {
         ? process.env.PROD_BASE_URL
         : process.env.DEV_BASE_URL;
 
-      return pdfs.map(pdf => ({
+      return this._deduplicatePDFRecords(pdfs).map(pdf => ({
         ...pdf,
         filePath: pdf.filePath && !pdf.filePath.startsWith('http')
           ? `${EnvBaseURL}/${pdf.filePath}`
@@ -440,7 +571,15 @@ class PDFService {
 
       console.log('[PDF Count] Query:', JSON.stringify(query, null, 2));
 
-      return await PDF.countDocuments(query);
+      const pdfs = await PDF.find(query).select('filePath').lean();
+      const seenPaths = new Set();
+
+      for (const pdf of pdfs) {
+        const dedupeKey = this._normalizeStoragePath(pdf.filePath) || String(pdf._id);
+        seenPaths.add(dedupeKey);
+      }
+
+      return seenPaths.size;
     } catch (error) {
       throw new Error(`Failed to count all PDFs: ${error.message}`);
     }
@@ -705,18 +844,29 @@ class PDFService {
         throw new Error('PDF not found');
       }
 
-      // Delete PDF file from disk
-      if (pdf.filePath) {
-        deleteFile(pdf.filePath);
-      }
+      const normalizedPdfPath = this._normalizeStoragePath(pdf.filePath);
+      const normalizedCoverPath = pdf.coverImage
+        ? this._normalizeStoragePath(pdf.coverImage)
+        : null;
 
-      // Delete cover image from disk
-      if (pdf.coverImage) {
-        deleteFile(pdf.coverImage);
-      }
-
-      // Delete from database
+      // Delete DB record first so reference checks are accurate
       await PDF.findByIdAndDelete(id);
+
+      const remainingPdfRefs = await this._countReferencesToFile(normalizedPdfPath);
+      if (normalizedPdfPath && remainingPdfRefs === 0) {
+        deleteFile(normalizedPdfPath);
+      }
+
+      if (normalizedCoverPath) {
+        const remaining = await PDF.find({}).select('coverImage').lean();
+        const remainingCoverRefs = remaining.filter(
+          (item) => this._normalizeStoragePath(item.coverImage) === normalizedCoverPath
+        ).length;
+
+        if (remainingCoverRefs === 0) {
+          deleteFile(normalizedCoverPath);
+        }
+      }
 
       return { message: 'PDF deleted successfully' };
     } catch (error) {
@@ -731,16 +881,27 @@ class PDFService {
         throw new Error('PDF not found');
       }
 
-      // If new PDF file is uploaded, delete old one
-      if (newPdfPath && pdf.filePath) {
-        deleteFile(pdf.filePath);
-        data.filePath = newPdfPath;
+      const oldPdfPath = this._normalizeStoragePath(pdf.filePath);
+      const oldCoverPath = pdf.coverImage
+        ? this._normalizeStoragePath(pdf.coverImage)
+        : null;
+      const normalizedNewPdfPath = newPdfPath
+        ? this._normalizeStoragePath(newPdfPath)
+        : null;
+      const normalizedNewCoverPath = newCoverPath
+        ? this._normalizeStoragePath(newCoverPath)
+        : null;
+
+      if (normalizedNewPdfPath) {
+        const duplicate = await this._findByNormalizedFilePath(normalizedNewPdfPath, id);
+        if (duplicate) {
+          throw new Error('This PDF file is already registered');
+        }
+        data.filePath = normalizedNewPdfPath;
       }
 
-      // If new cover image is uploaded, delete old one
-      if (newCoverPath && pdf.coverImage) {
-        deleteFile(pdf.coverImage);
-        data.coverImage = newCoverPath;
+      if (normalizedNewCoverPath) {
+        data.coverImage = normalizedNewCoverPath;
       }
 
       const updatedPDF = await PDF.findByIdAndUpdate(
@@ -748,6 +909,24 @@ class PDFService {
         { $set: data },
         { new: true }
       ).populate('targetSchools', 'schoolName');
+
+      if (normalizedNewPdfPath && oldPdfPath) {
+        const remainingPdfRefs = await this._countReferencesToFile(oldPdfPath);
+        if (remainingPdfRefs === 0) {
+          deleteFile(oldPdfPath);
+        }
+      }
+
+      if (normalizedNewCoverPath && oldCoverPath) {
+        const remaining = await PDF.find({}).select('coverImage').lean();
+        const remainingCoverRefs = remaining.filter(
+          (item) => this._normalizeStoragePath(item.coverImage) === oldCoverPath
+        ).length;
+
+        if (remainingCoverRefs === 0) {
+          deleteFile(oldCoverPath);
+        }
+      }
 
       return updatedPDF;
     } catch (error) {

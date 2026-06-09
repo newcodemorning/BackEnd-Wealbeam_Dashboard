@@ -18,6 +18,21 @@ const migratePDFs = async (req, res) => {
   }
 };
 
+const removeDuplicatePDFs = async (req, res) => {
+  try {
+    const result = await PDFService.removeDuplicatePDFRecords();
+    res.status(200).json({
+      success: true,
+      ...result
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 const uploadPDF = async (req, res) => {
   try {
     if (!req.files || !req.files.pdf) {
@@ -97,7 +112,8 @@ const uploadPDF = async (req, res) => {
 const getAllPDFsForDashboard = async (req, res) => {
   try {
     const lang = req.lang || 'en';
-    const { page, limit, skip, sort, filter } = req.pagination;
+    const { page, limit, skip, filter } = req.pagination;
+    const sort = req.query.sort ? req.pagination.sort : { uploadedAt: -1 };
 
     const total = await PDFService.countAllPDFs(filter);
     const pdfs = await PDFService.getAllPDFsForDashboard(lang, filter, skip, limit, sort);
@@ -120,7 +136,8 @@ const getAllPDFsForDashboard = async (req, res) => {
 const getAllPDFs = async (req, res) => {
   try {
     const lang = req.lang || 'en';
-    const { page, limit, skip, sort, filter } = req.pagination;
+    const { page, limit, skip, filter } = req.pagination;
+    const sort = req.query.sort ? req.pagination.sort : { uploadedAt: -1 };
 
     const filterCount = {
       ...filter,
@@ -348,6 +365,7 @@ module.exports = {
   updatePDF,
   deletePDF,
   migratePDFs,
+  removeDuplicatePDFs,
   getPDFForAdminById,
   getFilterOptions,
   getPDFByIdPublic,

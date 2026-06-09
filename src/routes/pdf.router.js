@@ -9,6 +9,7 @@ const {
   updatePDF,
   deletePDF,
   migratePDFs,
+  removeDuplicatePDFs,
   getPDFForAdminById,
   getFilterOptions,
   getPDFByIdPublic,
@@ -29,6 +30,13 @@ router.post(
   authenticateUser,
   authorizeRole(['super-admin']),
   migratePDFs
+);
+
+router.post(
+  '/migrate/remove-duplicates',
+  authenticateUser,
+  authorizeRole(['super-admin']),
+  removeDuplicatePDFs
 );
 
 router.post(
