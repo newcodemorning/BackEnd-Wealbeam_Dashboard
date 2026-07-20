@@ -2,9 +2,9 @@ const forumService = require('../services/forum.service');
 
 module.exports = {
   async createPost(req, res) {
-    const { author, content, category } = req.body;
+    const { author, content, tags, parentId } = req.body;
     try {
-      const post = await forumService.createPost(author, content, category);
+      const post = await forumService.createPost(author, content, tags, parentId);
       res.status(201).json(post);
     } catch (error) {
       res.status(500).json({ error: error.message });

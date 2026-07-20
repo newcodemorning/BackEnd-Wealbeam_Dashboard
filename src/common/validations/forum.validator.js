@@ -25,8 +25,13 @@ const updatePostSchema = postSchema.fork(
     schema => schema.optional()
 );
 
+const likeSchema = Joi.object({
+    userId: Joi.string().required()
+});
+
 module.exports = {
     postSchema,
     updatePostSchema,
-    replySchema
+    replySchema,
+    likeSchema
 }; 

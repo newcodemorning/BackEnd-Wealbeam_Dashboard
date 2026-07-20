@@ -1,12 +1,13 @@
 const forumRepository = require('../repositories/forum.repository');
 
 module.exports = {
-  async createPost(author, content, category) {
+  async createPost(author, content, tags, parentId) {
     const postData = {
       author,
       content,
       createdAt: new Date(),
-      category,
+      tags: tags || [],
+      parentId: parentId || null,
       upvotes: 0,
       likes: [],
     };
