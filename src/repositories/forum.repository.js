@@ -17,14 +17,31 @@ module.exports = {
   },
 
   async fetchPostWithReplies(postId) {
-    const post = await Post.findById(postId).populate('replies');
+    const post = await Post.findById(postId)
+      .populate('likes', 'email role')
+      .populate({
+        path: 'replies',
+        populate: [
+          { path: 'author', select: 'first_name last_name profile_image' },
+          { path: 'likes', select: 'email role' }
+        ]
+      });
     if (!post) throw new Error('Post not found');
 
     return post;
   },
 
   async getAllPosts() {
-    return await Post.find().sort({ createdAt: -1 });
+    return await Post.find()
+      .populate('likes', 'email role')
+      .populate({
+        path: 'replies',
+        populate: [
+          { path: 'author', select: 'first_name last_name profile_image' },
+          { path: 'likes', select: 'email role' }
+        ]
+      })
+      .sort({ createdAt: -1 });
   },
 
   // Like or Unlike a Post
@@ -39,7 +56,11 @@ module.exports = {
       post.likes.splice(likeIndex, 1); // Unlike the post
     }
     await post.save();
-    return post;
+    
+    // Return populated post
+    const populatedPost = await Post.findById(postId)
+      .populate('likes', 'email role');
+    return populatedPost;
   },
 
   // Like or Unlike a Reply
@@ -57,6 +78,16 @@ module.exports = {
       reply.likes.splice(likeIndex, 1); // Unlike the reply
     }
     await post.save();
-    return reply;
+    
+    // Return populated reply
+    const populatedPost = await Post.findById(postId)
+      .populate({
+        path: 'replies',
+        populate: [
+          { path: 'author', select: 'first_name last_name profile_image' },
+          { path: 'likes', select: 'email role' }
+        ]
+      });
+    return populatedPost.replies.id(replyId);
   },
 };
