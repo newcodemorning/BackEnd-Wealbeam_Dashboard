@@ -1,5 +1,6 @@
 const Post = require('../models/furom.model');
 
+///
 module.exports = {
   async createPost(data) {
     const post = new Post(data);
