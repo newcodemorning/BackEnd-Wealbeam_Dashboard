@@ -25,29 +25,24 @@ Content-Type: application/json
 
 Creates a new forum post.
 
+**Authorization:** Only users with the following roles can create posts: `super-admin`, `school`, `teacher`, `parent`
+
 **Request Body:**
 ```json
 {
-  "author": "string (required)",
-  "content": "string (required)",
-  "tags": ["string"] (optional),
-  "parentId": "string (optional)"
+  "content": "string (required)"
 }
 ```
+
+**Note:** The `authorId` is automatically extracted from the authenticated user's JWT token.
 
 **Response (201):**
 ```json
 {
   "_id": "post_id",
-  "author": "John Doe",
+  "authorId": "user_id",
   "content": "Post content",
-  "category": "general",
-  "tags": [],
-  "parentId": null,
-  "upvotes": 0,
-  "likes": [],
-  "createdAt": "2024-01-15T10:30:00.000Z",
-  "replies": []
+  "createdAt": "2024-01-15T10:30:00.000Z"
 }
 ```
 
