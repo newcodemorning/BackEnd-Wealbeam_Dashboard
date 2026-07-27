@@ -10,10 +10,9 @@ const replySchema = Joi.object({
 });
 
 const postSchema = Joi.object({
-    author: Joi.string().required(),
     content: Joi.string().required(),
-    tags: Joi.array().items(Joi.string()),
-    parentId: Joi.string().allow('', null),
+    tags: Joi.array().items(Joi.string()).optional(),
+    parentId: Joi.string().allow('', null).optional(),
     upvotes: Joi.number().default(0),
     likes: Joi.array().items(Joi.string()),
     createdAt: Joi.date().iso(),
@@ -21,7 +20,7 @@ const postSchema = Joi.object({
 });
 
 const updatePostSchema = postSchema.fork(
-    ['author', 'content'],
+    ['content'],
     schema => schema.optional()
 );
 

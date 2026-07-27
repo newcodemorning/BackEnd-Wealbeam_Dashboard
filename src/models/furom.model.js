@@ -6,9 +6,9 @@ const replySchema = new mongoose.Schema({
     ref: 'Post',
     default: null,
   },
-  author: {
+  authorId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Parent',
+    ref: 'User',
     default: null,
   },
   content: {
@@ -27,8 +27,9 @@ const replySchema = new mongoose.Schema({
 });
 
 const postSchema = new mongoose.Schema({
-  author: {
-    type: String,
+  authorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
     required: true,
   },
   content: {

@@ -23,7 +23,7 @@ module.exports = {
       .populate({
         path: 'replies',
         populate: [
-          { path: 'author', select: 'first_name last_name profile_image' },
+          { path: 'authorId', select: 'first_name last_name profile_image' },
           { path: 'likes', select: 'email role' }
         ]
       });
@@ -38,7 +38,7 @@ module.exports = {
       .populate({
         path: 'replies',
         populate: [
-          { path: 'author', select: 'first_name last_name profile_image' },
+          { path: 'authorId', select: 'first_name last_name profile_image' },
           { path: 'likes', select: 'email role' }
         ]
       })
@@ -85,7 +85,7 @@ module.exports = {
       .populate({
         path: 'replies',
         populate: [
-          { path: 'author', select: 'first_name last_name profile_image' },
+          { path: 'authorId', select: 'first_name last_name profile_image' },
           { path: 'likes', select: 'email role' }
         ]
       });

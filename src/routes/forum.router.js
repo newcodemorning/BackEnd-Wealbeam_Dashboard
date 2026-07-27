@@ -5,9 +5,13 @@ const { postSchema, replySchema, likeSchema } = require('../common/validations/f
 const { authenticateUser, authorizeRole } = require('../common/middleware/auth');
 const router = express.Router();
 
-router.use(authenticateUser, authorizeRole(["super-admin", "school", "teacher", "parent"]));
+// Apply authentication to all routes
+router.use(authenticateUser);
 
-router.post('/add-new', validate(postSchema), forumController.createPost);
+// Create post - restricted to specific roles only
+router.post('/add-new', authorizeRole(["super-admin", "school", "teacher", "parent"]), validate(postSchema), forumController.createPost);
+
+// Other endpoints - authenticated users only
 router.post('/:postId/replies', validate(replySchema), forumController.addReply);
 router.get('/:postId', forumController.fetchPostWithReplies);
 router.get('/', forumController.fetchPosts);
