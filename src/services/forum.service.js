@@ -14,13 +14,13 @@ module.exports = {
     return await forumRepository.createPost(postData);
   },
 
-  async addReply(postId, parentId, author, content, upvotes) {
+  async addReply(postId, authorId, content) {
     const replyData = {
-      parentId: parentId || null,
-      author,
+      parentId: null,
+      authorId,
       content,
       createdAt: new Date(),
-      upvotes,
+      upvotes: 0,
       likes: [],
       postId,
     };

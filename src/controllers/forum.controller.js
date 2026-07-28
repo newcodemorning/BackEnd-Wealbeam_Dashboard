@@ -19,11 +19,17 @@ module.exports = {
 
   async addReply(req, res) {
     const { postId } = req.params;
-    const { parentId, author, content, upvotes } = req.body;
+    const { content } = req.body;
+    const authorId = req.user.id;
 
     try {
-      const reply = await forumService.addReply(postId, parentId, author, content, upvotes);
-      res.status(201).json(reply);
+      const reply = await forumService.addReply(postId, authorId, content);
+      res.status(201).json({
+        _id: reply._id,
+        authorId: reply.authorId,
+        content: reply.content,
+        createdAt: reply.createdAt
+      });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }

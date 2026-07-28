@@ -53,29 +53,27 @@ Creates a new forum post.
 
 Adds a reply to a specific post.
 
+**Authorization:** Only users with `super-admin` role can add replies.
+
 **URL Parameters:**
 - `postId` (string) - The ID of the post to reply to
 
 **Request Body:**
 ```json
 {
-  "content": "string (required)",
-  "author": "authorId (optional)",
-  "upvotes": "number (optional, default: 0)"
+  "content": "string (required)"
 }
 ```
+
+**Note:** The `authorId` is automatically extracted from the authenticated user's JWT token.
 
 **Response (201):**
 ```json
 {
-  "postId": "post_id",
-  "author": "Jane Doe",
+  "_id": "reply_id",
+  "authorId": "user_id",
   "content": "Reply content",
-  "parentId": null,
-  "upvotes": 0,
-  "likes": [],
-  "createdAt": "2024-01-15T10:35:00.000Z",
-  "_id": "reply_id"
+  "createdAt": "2024-01-15T10:35:00.000Z"
 }
 ```
 

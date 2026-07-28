@@ -12,7 +12,7 @@ router.use(authenticateUser);
 router.post('/add-new', authorizeRole(["super-admin", "school", "teacher", "parent"]), validate(postSchema), forumController.createPost);
 
 // Other endpoints - authenticated users only
-router.post('/:postId/replies', validate(replySchema), forumController.addReply);
+router.post('/:postId/replies', authorizeRole(["super-admin"]), validate(replySchema), forumController.addReply);
 router.get('/:postId', forumController.fetchPostWithReplies);
 router.get('/', forumController.fetchPosts);
 router.post('/:postId/like', validate(likeSchema), forumController.toggleLikePost); // Like/Unlike Post

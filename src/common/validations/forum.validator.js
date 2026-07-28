@@ -1,9 +1,8 @@
 const Joi = require('joi');
 
 const replySchema = Joi.object({
-    postId: Joi.string().allow('', null),
-    author: Joi.string().allow('', null),
     content: Joi.string().required(),
+    parentId: Joi.string().allow('', null).optional(),
     upvotes: Joi.number().default(0),
     likes: Joi.array().items(Joi.string()),
     createdAt: Joi.date().iso()
