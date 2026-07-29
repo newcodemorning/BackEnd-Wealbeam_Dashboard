@@ -91,7 +91,12 @@ Retrieves a single post with all its replies.
 ```json
 {
   "_id": "post_id",
-  "author": "John Doe",
+  "authorId": "user_id",
+  "author": {
+    "firstName": "John",
+    "lastName": "Doe",
+    "photo": "https://example.com/photo.jpg"
+  },
   "content": "Post content",
   "category": "general",
   "tags": [],
@@ -103,9 +108,13 @@ Retrieves a single post with all its replies.
     {
       "_id": "reply_id",
       "postId": "post_id",
-      "author": "Jane Doe",
+      "authorId": "user_id_2",
+      "author": {
+        "firstName": "Jane",
+        "lastName": "Smith",
+        "photo": "https://example.com/photo.jpg"
+      },
       "content": "Reply content",
-      "parentId": null,
       "upvotes": 0,
       "likes": [],
       "createdAt": "2024-01-15T10:35:00.000Z"
@@ -113,6 +122,8 @@ Retrieves a single post with all its replies.
   ]
 }
 ```
+
+**Note:** Both posts and replies include an `author` object with `firstName`, `lastName`, and `photo`. For school authors, `firstName` contains the school name and `lastName` is empty.
 ---
 
 ### 4. Fetch All Posts
@@ -125,7 +136,12 @@ Retrieves all forum posts sorted by creation date (newest first).
 [
   {
     "_id": "post_id",
-    "author": "John Doe",
+    "authorId": "user_id",
+    "author": {
+      "firstName": "John",
+      "lastName": "Doe",
+      "photo": "https://example.com/photo.jpg"
+    },
     "content": "Post content",
     "category": "general",
     "tags": [],
@@ -133,7 +149,22 @@ Retrieves all forum posts sorted by creation date (newest first).
     "upvotes": 0,
     "likes": [],
     "createdAt": "2024-01-15T10:30:00.000Z",
-    "replies": []
+    "replies": [
+      {
+        "_id": "reply_id",
+        "postId": "post_id",
+        "authorId": "user_id_2",
+        "author": {
+          "firstName": "Jane",
+          "lastName": "Smith",
+          "photo": "https://example.com/photo.jpg"
+        },
+        "content": "Reply content",
+        "upvotes": 0,
+        "likes": [],
+        "createdAt": "2024-01-15T10:35:00.000Z"
+      }
+    ]
   }
 ]
 ```
