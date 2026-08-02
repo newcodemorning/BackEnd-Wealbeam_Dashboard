@@ -113,7 +113,7 @@ const getAllPDFsForDashboard = async (req, res) => {
   try {
     const lang = req.lang || 'en';
     const { page, limit, skip, filter } = req.pagination;
-    const sort = req.query.sort ? req.pagination.sort : { uploadedAt: -1 };
+    const sort = req.query.sort ? req.pagination.sort : { 'title.en': 1 };
 
     const total = await PDFService.countAllPDFs(filter);
     const pdfs = await PDFService.getAllPDFsForDashboard(lang, filter, skip, limit, sort);
@@ -137,7 +137,7 @@ const getAllPDFs = async (req, res) => {
   try {
     const lang = req.lang || 'en';
     const { page, limit, skip, filter } = req.pagination;
-    const sort = req.query.sort ? req.pagination.sort : { uploadedAt: -1 };
+    const sort = req.query.sort ? req.pagination.sort : { 'title.en': 1 };
 
     const filterCount = {
       ...filter,
