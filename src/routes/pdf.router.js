@@ -59,7 +59,7 @@ router.get(
   pagination({
     defaultLimit: 10,
     maxLimit: 100,
-    allowedFilters: ['search', 'isVisible', 'isPublic', 'uploadedBy', 'targetSchools', 'supportedLanguages']
+    allowedFilters: ['search', 'isVisible', 'isPublic', 'uploadedBy', 'targetSchools', 'supportedLanguages', 'letter']
   }),
   getAllPDFsForDashboard
 );
@@ -112,7 +112,7 @@ router.get(
   pagination({
     defaultLimit: 10,
     maxLimit: 50,
-    allowedFilters: ['search', 'targetSchools', 'supportedLanguages']
+    allowedFilters: ['search', 'targetSchools', 'supportedLanguages', 'letter']
   }),
   getAllPDFs
 );

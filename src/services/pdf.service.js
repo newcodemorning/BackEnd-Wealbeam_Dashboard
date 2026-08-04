@@ -345,6 +345,13 @@ class PDFService {
         delete cleanFilter.$searchRegex;
       }
 
+      // Handle letter filter - filter by first letter of English title
+      if (cleanFilter.$letter) {
+        const letter = cleanFilter.$letter;
+        query['title.en'] = new RegExp(`^${letter}`, 'i');
+        delete cleanFilter.$letter;
+      }
+
       // Merge remaining filters
       query = { ...query, ...cleanFilter };
 
@@ -439,7 +446,16 @@ class PDFService {
       delete cleanFilter.$search;
       delete cleanFilter.$searchRegex;
 
-      let query = { isVisible: true, ...cleanFilter };
+      let query = { isVisible: true };
+
+      // Handle letter filter - filter by first letter of English title
+      if (cleanFilter.$letter) {
+        const letter = cleanFilter.$letter;
+        query['title.en'] = new RegExp(`^${letter}`, 'i');
+        delete cleanFilter.$letter;
+      }
+
+      query = { ...query, ...cleanFilter };
 
       // If user is a student, filter by their school
       if (userRole === 'student') {
@@ -515,6 +531,13 @@ class PDFService {
         delete cleanFilter.$searchRegex;
       }
 
+      // Handle letter filter - filter by first letter of English title
+      if (cleanFilter.$letter) {
+        const letter = cleanFilter.$letter;
+        query['title.en'] = new RegExp(`^${letter}`, 'i');
+        delete cleanFilter.$letter;
+      }
+
       // Merge remaining filters
       query = { ...query, ...cleanFilter };
 
@@ -565,6 +588,13 @@ class PDFService {
         ];
         delete cleanFilter.$search;
         delete cleanFilter.$searchRegex;
+      }
+
+      // Handle letter filter - filter by first letter of English title
+      if (cleanFilter.$letter) {
+        const letter = cleanFilter.$letter;
+        query['title.en'] = new RegExp(`^${letter}`, 'i');
+        delete cleanFilter.$letter;
       }
 
       query = { ...query, ...cleanFilter };
