@@ -345,10 +345,13 @@ class PDFService {
         delete cleanFilter.$searchRegex;
       }
 
-      // Handle letter filter - filter by first letter of English title
+      // Handle letter filter - filter by first letter of title
       if (cleanFilter.$letter) {
         const letter = cleanFilter.$letter;
-        query['title.en'] = new RegExp(`^${letter}`, 'i');
+        // Detect if letter is Arabic
+        const isArabic = /[\u0600-\u06FF]/.test(letter);
+        const titleField = isArabic ? 'title.ar' : 'title.en';
+        query[titleField] = new RegExp(`^${letter}`, 'i');
         delete cleanFilter.$letter;
       }
 
@@ -448,10 +451,13 @@ class PDFService {
 
       let query = { isVisible: true };
 
-      // Handle letter filter - filter by first letter of English title
+      // Handle letter filter - filter by first letter of title
       if (cleanFilter.$letter) {
         const letter = cleanFilter.$letter;
-        query['title.en'] = new RegExp(`^${letter}`, 'i');
+        // Detect if letter is Arabic
+        const isArabic = /[\u0600-\u06FF]/.test(letter);
+        const titleField = isArabic ? 'title.ar' : 'title.en';
+        query[titleField] = new RegExp(`^${letter}`, 'i');
         delete cleanFilter.$letter;
       }
 
@@ -531,10 +537,13 @@ class PDFService {
         delete cleanFilter.$searchRegex;
       }
 
-      // Handle letter filter - filter by first letter of English title
+      // Handle letter filter - filter by first letter of title
       if (cleanFilter.$letter) {
         const letter = cleanFilter.$letter;
-        query['title.en'] = new RegExp(`^${letter}`, 'i');
+        // Detect if letter is Arabic
+        const isArabic = /[\u0600-\u06FF]/.test(letter);
+        const titleField = isArabic ? 'title.ar' : 'title.en';
+        query[titleField] = new RegExp(`^${letter}`, 'i');
         delete cleanFilter.$letter;
       }
 
@@ -590,10 +599,13 @@ class PDFService {
         delete cleanFilter.$searchRegex;
       }
 
-      // Handle letter filter - filter by first letter of English title
+      // Handle letter filter - filter by first letter of title
       if (cleanFilter.$letter) {
         const letter = cleanFilter.$letter;
-        query['title.en'] = new RegExp(`^${letter}`, 'i');
+        // Detect if letter is Arabic
+        const isArabic = /[\u0600-\u06FF]/.test(letter);
+        const titleField = isArabic ? 'title.ar' : 'title.en';
+        query[titleField] = new RegExp(`^${letter}`, 'i');
         delete cleanFilter.$letter;
       }
 

@@ -95,8 +95,9 @@ const pagination = ({ defaultLimit = 5, maxLimit = 50, allowedFilters = [] } = {
             }
             // Letter filter - filter by first letter of title
             else if (f === 'letter' && req.query.letter) {
-                const letter = String(req.query.letter).trim().toLowerCase();
-                if (letter.length === 1 && /[a-z]/.test(letter)) {
+                const letter = String(req.query.letter).trim();
+                // Support both English (a-z) and Arabic letters
+                if (letter.length === 1 && (/[a-z]/.test(letter) || /[\u0600-\u06FF]/.test(letter))) {
                     filter.$letter = letter;
                 }
             }
