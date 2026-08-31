@@ -2,6 +2,8 @@ const responseService = require('../services/response.service');
 const Response = require('../models/response.model');
 const { generateAnalyticsReport, generateStudentsStatusReport, generateClassStudentsStatusReport, generateStudentCompareTwoDaysReport, generateSchoolExamSummaryReport, generateClassExamSummaryReport } = require('../services/report.service');
 const School = require('../models/school.model');
+const notificationService = require('../services/notification.service');
+const Student = require('../models/student.model');
 
 exports.submitFormResponse = async (req, res) => {
     try {
@@ -43,6 +45,29 @@ exports.submitFormResponse = async (req, res) => {
         }
 
         const response = await responseService.processFormResponse(studentId, form, answers);
+
+        // Create notification for super admin about form submission
+        try {
+            const student = await Student.findById(studentId);
+            if (student) {
+                await notificationService.createNotification({
+                    recipient_role: 'super-admin',
+                    title: 'New Form Submitted',
+                    message: `Student ${student.first_name} ${student.last_name} has submitted a question form.`,
+                    type: 'FORM_SUBMISSION',
+                    metadata: {
+                        student_id: studentId,
+                        student_name: `${student.first_name} ${student.last_name}`,
+                        form_id: form,
+                        submission_id: response._id,
+                        timestamp: response.timestamp
+                    }
+                });
+            }
+        } catch (notificationError) {
+            console.error('Failed to create notification:', notificationError);
+            // Don't fail the response if notification creation fails
+        }
 
         res.json({
             success: true,

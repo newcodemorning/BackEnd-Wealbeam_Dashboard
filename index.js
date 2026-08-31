@@ -21,8 +21,10 @@ const BlogRoutes = require('./src/routes/blog.router');;
 const superAdminRouter = require('./src/routes/super-admin.router')
 const IncidentReportRoutes = require('./src/routes/incident.routes');
 const FilteredDataRouter = require('./src/routes/data.router');
+const notificationRouter = require('./src/routes/notification.router');
 const translateMiddleware = require('./src/common/middleware/translateMiddleware');
 const { createIndexes } = require('./src/models/indexes');
+const { initializeSocket } = require('./src/config/socket');
 const basicAuth = require("express-basic-auth");
 
 
@@ -96,6 +98,7 @@ app.use("/incidents", IncidentReportRoutes);
 app.use("/profile", ProfileRoutes);
 app.use("/blog", BlogRoutes);
 app.use("/filter", FilteredDataRouter);
+app.use("/api/v1/admin/notifications", notificationRouter);
 
 // ************** Language-based routing ************** //
 
@@ -129,6 +132,9 @@ app.get('/version', (req, res) => {
 
 // Start server
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`\x1b[32mServer is running on port ${PORT}\x1b[0m`);
 });
+
+// Initialize Socket.io
+initializeSocket(server);
