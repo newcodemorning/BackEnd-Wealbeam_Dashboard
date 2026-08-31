@@ -1,13 +1,10 @@
 const jwt = require('jsonwebtoken');
+const { buildSocketCorsOptions } = require('./cors');
 let io;
 
 const initializeSocket = (server) => {
     io = require('socket.io')(server, {
-        cors: {
-            origin: process.env.CLIENT_URL || '*',
-            methods: ['GET', 'POST'],
-            credentials: true
-        }
+        cors: buildSocketCorsOptions()
     });
 
     // Authentication middleware for Socket.io

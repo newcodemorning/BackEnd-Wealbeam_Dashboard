@@ -25,6 +25,7 @@ const notificationRouter = require('./src/routes/notification.router');
 const translateMiddleware = require('./src/common/middleware/translateMiddleware');
 const { createIndexes } = require('./src/models/indexes');
 const { initializeSocket } = require('./src/config/socket');
+const { buildCorsOptions } = require('./src/config/cors');
 const basicAuth = require("express-basic-auth");
 
 
@@ -36,7 +37,7 @@ const swaggerDocument = YAML.load("./docs/swagger.yaml");
 require('dotenv').config();
 const path = require('path');
 const app = express();
-app.use(cors());
+app.use(cors(buildCorsOptions()));
 
 mongoose
   .connect(process.env.MONGO_DATABASE_URL, {
